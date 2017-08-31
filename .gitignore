@@ -1,0 +1,11 @@
+.bundle/
+doc/
+.yardoc/
+pkg/
+tmp
+*.orig
+tags
+*.swp
+*.swo
+coverage/
+.byebug_history
