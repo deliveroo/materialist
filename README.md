@@ -2,7 +2,7 @@
 
 > _adjective_ `philosophy`: relating to the theory that nothing exists except matter and its movements and modifications.
 
-An "materializer" is a ruby class that is responsible for receiving an event and
+A "materializer" is a ruby class that is responsible for receiving an event and
 materializing the remote resource (described by the event) in database.
 
 This library is a set of utilities that provide both the wiring and the DSL to
@@ -94,7 +94,7 @@ Here is what each part of the DSL mean:
 #### `use_model <model_name>`
 describes the name of the active record model to be used.
 
-#### `materialize <key>, as: <column> (default: key), prefix: <prefix> (default: '')`
+#### `materialize <key>, as: <column> (default: key)`
 describes mapping a resource key to database column.
 
 #### `link <key>`
