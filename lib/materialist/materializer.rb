@@ -1,16 +1,15 @@
 require 'routemaster/api_client'
 
-module Routemaster
-  module Indexer
-    VERSION = '0.0.1'
+module Materialist
+  module Materializer
 
     def self.included(base)
       base.extend(Internals::ClassMethods)
       base.extend(Internals::DSL)
 
       root_mapping = []
-      base.instance_variable_set(:@rm_indexer_options, { mapping: root_mapping })
-      base.instance_variable_set(:@__rm_indexer_dsl_mapping_stack, [root_mapping])
+      base.instance_variable_set(:@materialist_options, { mapping: root_mapping })
+      base.instance_variable_set(:@__materialist_dsl_mapping_stack, [root_mapping])
     end
 
     module Internals
@@ -33,49 +32,49 @@ module Routemaster
       end
 
       module ClassMethods
-        attr_reader :rm_indexer_options, :__rm_indexer_dsl_mapping_stack
+        attr_reader :materialist_options, :__materialist_dsl_mapping_stack
 
         def perform(url, action)
-          indexer = Indexer.new(url, self)
-          action == :delete ? indexer.destroy : indexer.upsert
+          materializer = Materializer.new(url, self)
+          action == :delete ? materializer.destroy : materializer.upsert
         end
       end
 
       module DSL
 
-        def index(key, as: key)
-          __rm_indexer_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
+        def materialize(key, as: key)
+          __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
         end
 
         def link(key)
           link_mapping = LinkMapping.new(key: key)
-          __rm_indexer_dsl_mapping_stack.last << link_mapping
-          __rm_indexer_dsl_mapping_stack << link_mapping.mapping
+          __materialist_dsl_mapping_stack.last << link_mapping
+          __materialist_dsl_mapping_stack << link_mapping.mapping
           yield
-          __rm_indexer_dsl_mapping_stack.pop
+          __materialist_dsl_mapping_stack.pop
         end
 
         def use_model(klass)
-          rm_indexer_options[:model_class] = klass
+          materialist_options[:model_class] = klass
         end
 
-        def after_index(method_name)
-          rm_indexer_options[:after_index] = method_name
+        def after_upsert(method_name)
+          materialist_options[:after_upsert] = method_name
         end
 
       end
 
-      class Indexer
+      class Materializer
 
         def initialize(url, klass)
           @url = url
           @instance = klass.new
-          @options = klass.rm_indexer_options
+          @options = klass.materialist_options
         end
 
         def upsert
           upsert_record.tap do |entity|
-            instance.send(after_index, entity) if after_index
+            instance.send(after_upsert, entity) if after_upsert
           end
         end
 
@@ -98,8 +97,8 @@ module Routemaster
           options.fetch :mapping
         end
 
-        def after_index
-          options[:after_index]
+        def after_upsert
+          options[:after_upsert]
         end
 
         def model_class

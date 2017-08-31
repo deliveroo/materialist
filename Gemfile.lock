@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    routemaster-indexer (0.0.1)
+    materialist (0.0.1)
       sidekiq
 
 GEM
@@ -152,10 +152,10 @@ DEPENDENCIES
   dotenv
   fork_break
   guard-rspec
+  materialist!
   pry
   psych
   routemaster-drain (~> 3.0)
-  routemaster-indexer!
   rspec
   sidekiq
   simplecov

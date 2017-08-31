@@ -1,14 +1,14 @@
 require 'spec_helper'
-require 'routemaster/indexer/event_handler'
-require 'routemaster/indexer/event_worker'
+require 'materialist/event_handler'
+require 'materialist/event_worker'
 
-RSpec.describe Routemaster::Indexer::EventHandler do
+RSpec.describe Materialist::EventHandler do
   let(:options) {{}}
   subject { described_class.new options }
 
   let(:worker_double) { double() }
   before do
-    allow(Routemaster::Indexer::EventWorker).to receive(:set)
+    allow(Materialist::EventWorker).to receive(:set)
       .and_return worker_double
   end
 
@@ -58,7 +58,7 @@ RSpec.describe Routemaster::Indexer::EventHandler do
       let(:options) {{ queue: queue_name }}
 
       it "enqueues the event in the given queue" do
-        expect(Routemaster::Indexer::EventWorker).to receive(:set)
+        expect(Materialist::EventWorker).to receive(:set)
           .with(queue: queue_name)
         expect(worker_double).to receive(:perform_async).with(event)
         perform

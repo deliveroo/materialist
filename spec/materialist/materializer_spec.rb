@@ -1,21 +1,21 @@
 require 'spec_helper'
-require 'routemaster/indexer/event_worker'
+require 'materialist/materializer'
 
-RSpec.describe Routemaster::Indexer do
+RSpec.describe Materialist::Materializer do
   describe "#perform" do
-    let!(:indexer_class) do
-      class FoobarIndexer
-        include Routemaster::Indexer
+    let!(:materializer_class) do
+      class FoobarMaterializer
+        include Materialist::Materializer
 
         use_model :foobar
-        index :name
-        index :age, as: :how_old
+        materialize :name
+        materialize :age, as: :how_old
 
         link :city do
-          index :timezone
+          materialize :timezone
 
           link :country do
-            index :tld, as: :country_tld
+            materialize :tld, as: :country_tld
           end
         end
       end
@@ -56,7 +56,7 @@ RSpec.describe Routemaster::Indexer do
     end
 
     let(:action) { :create }
-    let(:perform) { FoobarIndexer.perform(source_url, action) }
+    let(:perform) { FoobarMaterializer.perform(source_url, action) }
 
     def performs_upsert
       expect(Foobar).to receive(:find_or_initialize_by)
@@ -109,17 +109,17 @@ RSpec.describe Routemaster::Indexer do
       end
     end
 
-    context "when after_index is configured" do
+    context "when after_upsert is configured" do
       let(:expected_attributes) {{}}
-      let!(:indexer_class) do
-        class FoobarIndexer
-          include Routemaster::Indexer
+      let!(:materializer_class) do
+        class FoobarMaterializer
+          include Materialist::Materializer
 
           use_model :foobar
-          after_index :my_method
+          after_upsert :my_method
 
           def my_method(entity)
-            entity.after_index_action
+            entity.after_upsert_action
           end
         end
       end
@@ -127,8 +127,8 @@ RSpec.describe Routemaster::Indexer do
       %i(create update noop).each do |action_name|
         context "when action is :#{action_name}" do
           let(:action) { action_name }
-          it "calls after_index method" do
-            expect(record_double).to receive(:after_index_action)
+          it "calls after_upsert method" do
+            expect(record_double).to receive(:after_upsert_action)
             performs_upsert
           end
         end
@@ -137,8 +137,8 @@ RSpec.describe Routemaster::Indexer do
       context "when action is :delete" do
         let(:action) { :delete }
 
-        it "does not call after_index method" do
-          expect(record_double).to_not receive(:after_index_action)
+        it "does not call after_upsert method" do
+          expect(record_double).to_not receive(:after_upsert_action)
           performs_destroy
         end
       end
