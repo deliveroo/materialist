@@ -8,7 +8,7 @@ module Materialist
     def perform(event)
       topic = event['topic']
       materializer = "#{topic.to_s.singularize.classify}Materializer".constantize
-      materializer.perform event["url"]
+      materializer.perform(event['url'], event['type'].to_sym)
     end
   end
 end
