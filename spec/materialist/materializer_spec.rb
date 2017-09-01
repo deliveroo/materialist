@@ -1,7 +1,10 @@
 require 'spec_helper'
+require 'support/uses_redis'
 require 'materialist/materializer'
 
 RSpec.describe Materialist::Materializer do
+  uses_redis
+
   describe "#perform" do
     let!(:materializer_class) do
       class FoobarMaterializer

@@ -115,3 +115,28 @@ class ZoneMaterializer
   end
 end
 ```
+
+### Materialized record
+
+Imagine you have materialized rider from a routemaster topic and you need to access a key from the remote source that you HAVEN'T materialized locally.
+
+> NOTE that doing such thing is only acceptable if you use `caching` drain, otherwise every time the remote source is fetched a fresh http call is made which will result in hammering of the remote service.
+
+> Also it is unacceptable to iterate through a large set of records and call on remote sources. Any such data should be materialised because database (compared to redis cache) is more optimised to perform scan operations.
+
+```ruby
+class Rider
+  include Materialist::MaterializedRecord
+
+  source_link_reader :city
+  source_link_reader :country, via: :city
+end
+```
+
+Above will give you `.source`, `.city` and `.country` on any instances of `Rider`, allowing you to access remote keys.
+
+e.g.
+
+```ruby
+Rider.last.country.created_at
+```
