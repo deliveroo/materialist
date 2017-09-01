@@ -21,7 +21,62 @@ RSpec.describe Materialist::Materializer do
       end
     end
 
-    let!(:foobar_class) { class Foobar; end }
+    # this class mocks active record behaviour
+    class Foobar
+      attr_accessor :source_url, :name, :how_old, :age, :timezone, :country_tld
+
+      def update_attributes(attrs)
+        attrs.each { |k, v| send("#{k}=", v) }
+      end
+
+      def save!
+        self.class.all[source_url] = self
+      end
+
+      def destroy!
+        self.class.all.delete source_url
+      end
+
+      def reload
+        self.class.all[source_url]
+      end
+
+      def actions_called
+        @_actions_called ||= {}
+      end
+
+      class << self
+        def find_or_initialize_by(source_url:)
+          (all[source_url] || Foobar.new).tap do |record|
+            record.source_url = source_url
+          end
+        end
+
+        def find_by(source_url:)
+          all[source_url]
+        end
+
+        def create!(attrs)
+          new.tap do |record|
+            record.update_attributes attrs
+            record.save!
+          end
+        end
+
+        def all
+          @@_store ||= {}
+        end
+
+        def flush_all
+          @@_store = {}
+        end
+
+        def count
+          all.keys.size
+        end
+      end
+    end
+
     let(:country_url) { 'https://service.dev/countries/1' }
     let(:country_body) {{ tld: 'fr' }}
     let(:city_url) { 'https://service.dev/cities/1' }
@@ -29,6 +84,7 @@ RSpec.describe Materialist::Materializer do
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
     before do
+      Foobar.flush_all
       stub_request(:get, source_url).to_return(
         status: 200,
         body: source_body.to_json,
@@ -46,47 +102,50 @@ RSpec.describe Materialist::Materializer do
       )
     end
 
-    let(:expected_attributes) do
-      { name: 'jack', how_old: 30, country_tld: 'fr', timezone: 'Europe/Paris' }
-    end
-
-    let(:record_double) { double() }
-    before do
-      allow(Foobar).to receive(:find_or_initialize_by).and_return record_double
-    end
-
     let(:action) { :create }
     let(:perform) { FoobarMaterializer.perform(source_url, action) }
 
-    def performs_upsert
-      expect(Foobar).to receive(:find_or_initialize_by)
-        .with(source_url: source_url)
-      expect(record_double).to receive(:update_attributes).with(expected_attributes)
-      expect(record_double).to receive(:save!)
-      perform
+    it "inserts record in db" do
+      expect{perform}.to change{Foobar.count}.by 1
+      inserted = Foobar.find_by(source_url: source_url)
+      expect(inserted.name).to eq source_body[:name]
+      expect(inserted.how_old).to eq source_body[:age]
+      expect(inserted.timezone).to eq city_body[:timezone]
+      expect(inserted.country_tld).to eq country_body[:tld]
     end
 
-    def performs_destroy
-      expect(Foobar).to receive(:where)
-        .with(source_url: source_url)
-        .and_return record_double
-      expect(record_double).to receive(:destroy_all)
-      perform
-    end
+    context "when record already exists" do
+      let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
 
-    it { performs_upsert }
+      it "updates the existing record" do
+        expect{ perform }.to change { record.reload.name }
+          .from('mo').to('jack')
+      end
+
+      context "when action is :delete" do
+        let(:action) { :delete }
+
+        it "removes record from db" do
+          expect{perform}.to change{Foobar.count}.by -1
+        end
+      end
+    end
 
     %i(create update noop).each do |action_name|
       context "when action is :#{action_name}" do
         let(:action) { action_name }
-        it { performs_upsert }
+        it "inserts record in db" do
+          expect{perform}.to change{Foobar.count}.by 1
+        end
       end
     end
 
-    context "when action is :delete" do
+    context "when action is :delete and no existing record in db" do
       let(:action) { :delete }
 
-      it { performs_destroy }
+      it "does not remove anything from db" do
+        expect{perform}.to change{Foobar.count}.by 0
+      end
     end
 
     context "if resource returns 404" do
@@ -100,17 +159,15 @@ RSpec.describe Materialist::Materializer do
     context "if a linked resource returns 404" do
       before { stub_request(:get, city_url).to_return(status: 404) }
 
-      let(:expected_attributes) do
-        { name: 'jack', how_old: 30 }
-      end
-
       it "ignores keys from the relation" do
-        performs_upsert
+        expect{perform}.to change{Foobar.count}.by 1
+        inserted = Foobar.find_by(source_url: source_url)
+        expect(inserted.country_tld).to eq nil
       end
     end
 
     context "when after_upsert is configured" do
-      let(:expected_attributes) {{}}
+      let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
       let!(:materializer_class) do
         class FoobarMaterializer
           include Materialist::Materializer
@@ -119,7 +176,7 @@ RSpec.describe Materialist::Materializer do
           after_upsert :my_method
 
           def my_method(entity)
-            entity.after_upsert_action
+            entity.actions_called[:after_upsert] = true
           end
         end
       end
@@ -128,8 +185,7 @@ RSpec.describe Materialist::Materializer do
         context "when action is :#{action_name}" do
           let(:action) { action_name }
           it "calls after_upsert method" do
-            expect(record_double).to receive(:after_upsert_action)
-            performs_upsert
+            expect{ perform }.to change { record.actions_called[:after_upsert] }
           end
         end
       end
@@ -138,8 +194,48 @@ RSpec.describe Materialist::Materializer do
         let(:action) { :delete }
 
         it "does not call after_upsert method" do
-          expect(record_double).to_not receive(:after_upsert_action)
-          performs_destroy
+          expect{ perform }.to_not change { record.actions_called[:after_upsert] }
+        end
+      end
+
+    end
+
+    context "when after_destroy is configured" do
+      let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
+      let!(:materializer_class) do
+        class FoobarMaterializer
+          include Materialist::Materializer
+
+          use_model :foobar
+          after_destroy :my_method
+
+          def my_method(entity)
+            entity.actions_called[:after_destroy] = true
+          end
+        end
+      end
+
+      %i(create update noop).each do |action_name|
+        context "when action is :#{action_name}" do
+          let(:action) { action_name }
+          it "does not call after_destroy method" do
+            expect{ perform }.to_not change { record.actions_called[:after_destroy] }
+          end
+        end
+      end
+
+      context "when action is :delete" do
+        let(:action) { :delete }
+
+        it "calls after_destroy method" do
+          expect{ perform }.to change { record.actions_called[:after_destroy] }
+        end
+
+        context "when resource doesn't exist locally" do
+          it "does not raise error" do
+            Foobar.flush_all
+            expect{ perform }.to_not raise_error
+          end
         end
       end
 

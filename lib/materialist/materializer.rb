@@ -1,3 +1,4 @@
+require 'active_support/inflector'
 require 'routemaster/api_client'
 
 module Materialist
@@ -62,6 +63,9 @@ module Materialist
           materialist_options[:after_upsert] = method_name
         end
 
+        def after_destroy(method_name)
+          materialist_options[:after_destroy] = method_name
+        end
       end
 
       class Materializer
@@ -79,7 +83,11 @@ module Materialist
         end
 
         def destroy
-          model_class.where(source_url: url).destroy_all
+          model_class.find_by(source_url: url).tap do |entity|
+            entity.destroy!.tap do |entity|
+              instance.send(after_destroy, entity) if after_destroy
+            end if entity
+          end
         end
 
         private
@@ -99,6 +107,10 @@ module Materialist
 
         def after_upsert
           options[:after_upsert]
+        end
+
+        def after_destroy
+          options[:after_destroy]
         end
 
         def model_class
