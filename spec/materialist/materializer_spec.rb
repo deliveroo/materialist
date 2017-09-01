@@ -59,6 +59,7 @@ RSpec.describe Materialist::Materializer do
     let(:perform) { FoobarMaterializer.perform(source_url, action) }
 
     def performs_upsert
+      # this is a bit leaky, TODO: mock active record here
       expect(Foobar).to receive(:find_or_initialize_by)
         .with(source_url: source_url)
       expect(record_double).to receive(:update_attributes).with(expected_attributes)
@@ -67,10 +68,11 @@ RSpec.describe Materialist::Materializer do
     end
 
     def performs_destroy
-      expect(Foobar).to receive(:where)
+      # this is a bit leaky, TODO: mock active record here
+      expect(Foobar).to receive(:find_by)
         .with(source_url: source_url)
         .and_return record_double
-      expect(record_double).to receive(:destroy_all)
+      expect(record_double).to receive(:destroy!).and_return record_double
       perform
     end
 
@@ -140,6 +142,54 @@ RSpec.describe Materialist::Materializer do
         it "does not call after_upsert method" do
           expect(record_double).to_not receive(:after_upsert_action)
           performs_destroy
+        end
+      end
+
+    end
+
+    context "when after_destroy is configured" do
+      let(:expected_attributes) {{}}
+      let!(:materializer_class) do
+        class FoobarMaterializer
+          include Materialist::Materializer
+
+          use_model :foobar
+          after_destroy :my_method
+
+          def my_method(entity)
+            entity.after_destroy_action
+          end
+        end
+      end
+
+      %i(create update noop).each do |action_name|
+        context "when action is :#{action_name}" do
+          let(:action) { action_name }
+          it "does not call after_destroy method" do
+            expect(record_double).to_not receive(:after_destroy_action)
+            performs_upsert
+          end
+        end
+      end
+
+      context "when action is :delete" do
+        let(:action) { :delete }
+        it "calls after_destroy method" do
+          expect(record_double).to receive(:after_destroy_action)
+          performs_destroy
+        end
+
+        context "when resource doesn't exist locally" do
+          before do
+            allow(Foobar).to receive(:find_by)
+              .with(source_url: source_url)
+              .and_return nil
+          end
+
+          it "does not calls after_destroy method" do
+            expect(record_double).to_not receive(:after_destroy_action)
+            perform
+          end
         end
       end
 
