@@ -1,3 +1,4 @@
+require 'active_support/inflector'
 require 'routemaster/api_client'
 
 module Materialist
