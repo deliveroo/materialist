@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    materialist (0.0.1)
+    materialist (0.0.2)
       sidekiq
 
 GEM
