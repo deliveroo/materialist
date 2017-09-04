@@ -55,9 +55,7 @@ RSpec.describe Materialist::MaterializedRecord do
         stub_request(:get, source_url).to_return(status: 404)
       end
 
-      it "returns nil" do
-        expect(record.source).to be_nil
-      end
+      it { expect(record.source).to be_nil }
     end
   end
 
@@ -71,9 +69,7 @@ RSpec.describe Materialist::MaterializedRecord do
         stub_request(:get, source_url).to_return(status: 404)
       end
 
-      it "returns nil" do
-        expect(record.city).to be_nil
-      end
+      it { expect(record.city).to be_nil }
     end
 
     context "when remote city returns 404" do
@@ -81,11 +77,14 @@ RSpec.describe Materialist::MaterializedRecord do
         stub_request(:get, city_url).to_return(status: 404)
       end
 
-      it "returns nil" do
-        expect(record.city).to be_nil
-      end
+      it { expect(record.city).to be_nil }
     end
 
+    context "remote source is not linked to city" do
+      let(:source_body) {{ _links: { }, name: 'jack', age: 30 }}
+
+      it { expect(record.city).to be_nil }
+    end
   end
 
   describe "simple link reader via another link" do
@@ -98,9 +97,7 @@ RSpec.describe Materialist::MaterializedRecord do
         stub_request(:get, city_url).to_return(status: 404)
       end
 
-      it "returns nil" do
-        expect(record.country).to be_nil
-      end
+      it { expect(record.country).to be_nil }
     end
 
     context "when remote country returns 404" do
@@ -108,9 +105,19 @@ RSpec.describe Materialist::MaterializedRecord do
         stub_request(:get, country_url).to_return(status: 404)
       end
 
-      it "returns nil" do
-        expect(record.country).to be_nil
-      end
+      it { expect(record.country).to be_nil }
+    end
+
+    context "remote source is not linked to city" do
+      let(:source_body) {{ _links: { }, name: 'jack', age: 30 }}
+
+      it { expect(record.country).to be_nil }
+    end
+
+    context "remote city is not linked to country" do
+      let(:city_body) {{ _links: { }, timezone: 'Europe/Paris' }}
+
+      it { expect(record.country).to be_nil }
     end
   end
 end
