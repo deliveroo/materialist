@@ -10,6 +10,7 @@ RSpec.describe Materialist::MaterializedRecord do
       include Materialist::MaterializedRecord
 
       attr_accessor :source_url
+
       source_link_reader :city
       source_link_reader :country, via: :city
     end
@@ -48,17 +49,68 @@ RSpec.describe Materialist::MaterializedRecord do
       expect(record.source.name).to eq 'jack'
       expect(record.source.age).to eq 30
     end
+
+    context "when remote source returns 404" do
+      before do
+        stub_request(:get, source_url).to_return(status: 404)
+      end
+
+      it "returns nil" do
+        expect(record.source).to be_nil
+      end
+    end
   end
 
   describe "simple link reader" do
     it "returns the representation of the link source" do
       expect(record.city.timezone).to eq 'Europe/Paris'
     end
+
+    context "when remote source returns 404" do
+      before do
+        stub_request(:get, source_url).to_return(status: 404)
+      end
+
+      it "returns nil" do
+        expect(record.city).to be_nil
+      end
+    end
+
+    context "when remote city returns 404" do
+      before do
+        stub_request(:get, city_url).to_return(status: 404)
+      end
+
+      it "returns nil" do
+        expect(record.city).to be_nil
+      end
+    end
+
   end
 
   describe "simple link reader via another link" do
     it "returns the representation of the link source" do
       expect(record.country.tld).to eq 'fr'
+    end
+
+    context "when remote city returns 404" do
+      before do
+        stub_request(:get, city_url).to_return(status: 404)
+      end
+
+      it "returns nil" do
+        expect(record.country).to be_nil
+      end
+    end
+
+    context "when remote country returns 404" do
+      before do
+        stub_request(:get, country_url).to_return(status: 404)
+      end
+
+      it "returns nil" do
+        expect(record.country).to be_nil
+      end
     end
   end
 end

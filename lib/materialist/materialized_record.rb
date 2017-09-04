@@ -11,20 +11,26 @@ module Materialist
       def source_link_reader(*keys, via: nil)
         keys.each do |key|
           define_method(key) do
-            raw = source_raw
-            raw = raw.send(via).show if via
-            raw.send(key).show.body
+            begin
+              raw = source_raw
+              raw = raw.send(via).show if via
+              raw ? raw.send(key).show.body : nil
+            rescue Routemaster::Errors::ResourceNotFound
+              nil
+            end
           end
         end
       end
     end
 
     def source
-      source_raw.body
+      source_raw&.body
     end
 
     def source_raw
       api_client.get(source_url)
+    rescue Routemaster::Errors::ResourceNotFound
+      nil
     end
 
     def api_client
