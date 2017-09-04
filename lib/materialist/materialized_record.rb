@@ -1,4 +1,5 @@
 require 'routemaster/api_client'
+require_relative './errors'
 
 module Materialist
   module MaterializedRecord
@@ -8,7 +9,7 @@ module Materialist
     end
 
     module ClassMethods
-      def source_link_reader(*keys, via: nil)
+      def source_link_reader(*keys, via: nil, allow_nil: false)
         keys.each do |key|
           define_method(key) do
             (via ? [via, key] : [key])
@@ -16,9 +17,9 @@ module Materialist
                 begin
                   (res && res.body._links.include?(path)) ?
                     res.send(path).show :
-                    nil
+                    (allow_nil ? nil : raise(ResourceNotFound))
                 rescue Routemaster::Errors::ResourceNotFound
-                  nil
+                  (allow_nil ? nil : raise(ResourceNotFound))
                 end
               end
               &.body
