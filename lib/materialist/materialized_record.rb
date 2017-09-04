@@ -29,19 +29,15 @@ module Materialist
     end
 
     def source
-      source_raw&.body
+      source_raw.body
     end
 
     private
 
     def source_raw
-      _rm_api_client.get(source_url)
-    end
-
-    def _rm_api_client
       Routemaster::APIClient.new(
         response_class: Routemaster::Responses::HateoasResponse
-      )
+      ).get(source_url)
     end
   end
 end
