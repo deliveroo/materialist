@@ -8,7 +8,27 @@ materializing the remote resource (described by the event) in database.
 This library is a set of utilities that provide both the wiring and the DSL to
 painlessly do so.
 
-### Configuration
+### Entity
+
+Your materialised entity need to have a **unique** `source_url` column, alongside any other field you wish to materialise.
+
+```ruby
+create_table "zones", force: :cascade do |t|
+  t.integer  "orderweb_id"
+  t.string   "code",                    null: false
+  t.string   "name"
+  t.string   "timezone"
+  t.string   "country_name"
+  t.string   "country_iso_alpha2_code"
+  t.string   "source_url"
+  t.datetime "created_at",              null: false
+  t.datetime "updated_at",              null: false
+  t.index ["code"], name: "index_zones_on_code", unique: true, using: :btree
+  t.index ["source_url"], name: "index_zones_on_source_url", unique: true, using: :btree
+end
+```
+
+### Routemaster Configuration
 
 First you need an "event handler":
 
@@ -102,7 +122,7 @@ describes materializing from a relation of the resource. This can be nested to a
 
 When inside the block of a `link` any other part of DSL can be used and will be evaluated in the context of the relation resource.
 
-#### `after_upsert <method>`
+#### `after_upsert <method>` -- also `after_destroy`
 describes the name of the instance method to be invoked after a record was materialized.
 
 ```ruby
