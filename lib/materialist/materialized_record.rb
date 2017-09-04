@@ -11,9 +11,17 @@ module Materialist
       def source_link_reader(*keys, via: nil)
         keys.each do |key|
           define_method(key) do
-            raw = source_raw
-            raw = _rm_try_read_link(raw, via) if via
-            raw ? _rm_try_read_link(raw, key)&.body : nil
+            (via ? [via, key] : [key])
+              .inject(source_raw) do |res, path|
+                begin
+                  (res && res.body._links.include?(path)) ?
+                    res.send(path).show :
+                    nil
+                rescue Routemaster::Errors::ResourceNotFound
+                  nil
+                end
+              end
+              &.body
           end
         end
       end
@@ -23,26 +31,18 @@ module Materialist
       source_raw&.body
     end
 
-    def source_raw
-      api_client.get(source_url)
-    rescue Routemaster::Errors::ResourceNotFound
-      nil
-    end
-
-    def api_client
-      @_api_client ||= Routemaster::APIClient.new(
-        response_class: Routemaster::Responses::HateoasResponse
-      )
-    end
-
     private
 
-    def _rm_try_read_link(source, key)
-      source.body._links.include?(key) ?
-        source.send(key).show :
-        nil
+    def source_raw
+      _rm_api_client.get(source_url)
     rescue Routemaster::Errors::ResourceNotFound
       nil
+    end
+
+    def _rm_api_client
+      Routemaster::APIClient.new(
+        response_class: Routemaster::Responses::HateoasResponse
+      )
     end
   end
 end
