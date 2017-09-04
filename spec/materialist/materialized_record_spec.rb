@@ -55,21 +55,15 @@ RSpec.describe Materialist::MaterializedRecord do
         stub_request(:get, source_url).to_return(status: 404)
       end
 
-      it { expect(record.source).to be_nil }
+      it "bubbles up routemaster error" do
+        expect{ record.source }.to raise_error(Routemaster::Errors::ResourceNotFound)
+      end
     end
   end
 
   describe "simple link reader" do
     it "returns the representation of the link source" do
       expect(record.city.timezone).to eq 'Europe/Paris'
-    end
-
-    context "when remote source returns 404" do
-      before do
-        stub_request(:get, source_url).to_return(status: 404)
-      end
-
-      it { expect(record.city).to be_nil }
     end
 
     context "when remote city returns 404" do

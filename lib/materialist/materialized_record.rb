@@ -35,8 +35,6 @@ module Materialist
 
     def source_raw
       _rm_api_client.get(source_url)
-    rescue Routemaster::Errors::ResourceNotFound
-      nil
     end
 
     def _rm_api_client
