@@ -33,6 +33,11 @@ class CreateZones < ActiveRecord::Migration[5.0]
 end
 ```
 
+```ruby
+class Zone < ApplicationRecord
+end
+```
+
 ### Routemaster Configuration
 
 First you need an "event handler":
