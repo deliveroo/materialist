@@ -8,6 +8,20 @@ materializing the remote resource (described by the event) in database.
 This library is a set of utilities that provide both the wiring and the DSL to
 painlessly do so.
 
+### Install
+
+In your `gemfile`
+
+```ruby
+gem 'materialist'
+```
+
+Then do
+
+```bash
+bundle
+```
+
 ### Entity
 
 Your materialised entity need to have a **unique** `source_url` column, alongside any other field you wish to materialise.
@@ -163,10 +177,17 @@ class Rider
 end
 ```
 
-Above will give you `.source`, `.city` and `.country` on any instances of `Rider`, allowing you to access remote keys.
+#### DSL
+
+- `source_link_reader <key>, via: <key> (default: none), allow_nil: true/false (default: false)`: Adds a method named `<key>` to the class giving access to the specified linked resource. If `allow_nil` is set to `false` (default) and error is raised if the resource is missing.
+
+The above example will give you `.source`, `.city` and `.country` on any instances of `Rider`, allowing you to access remote resources.
 
 e.g.
 
 ```ruby
-Rider.last.country.created_at
+rider = Rider.last
+rider.source.name
+rider.city.code
+rider.country.created_at
 ```
