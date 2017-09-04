@@ -13,18 +13,23 @@ painlessly do so.
 Your materialised entity need to have a **unique** `source_url` column, alongside any other field you wish to materialise.
 
 ```ruby
-create_table "zones", force: :cascade do |t|
-  t.integer  "orderweb_id"
-  t.string   "code",                    null: false
-  t.string   "name"
-  t.string   "timezone"
-  t.string   "country_name"
-  t.string   "country_iso_alpha2_code"
-  t.string   "source_url"
-  t.datetime "created_at",              null: false
-  t.datetime "updated_at",              null: false
-  t.index ["code"], name: "index_zones_on_code", unique: true, using: :btree
-  t.index ["source_url"], name: "index_zones_on_source_url", unique: true, using: :btree
+class CreateZones < ActiveRecord::Migration[5.0]
+  def change
+    create_table :zones do |t|
+      t.integer :orderweb_id
+      t.string :code, null: false
+      t.string :name
+      t.string :timezone
+      t.string :country_name
+      t.string :country_iso_alpha2_code
+      t.string :source_url
+
+      t.timestamps
+
+      t.index :code, unique: true
+      t.index :source_url, unique: true
+    end
+  end
 end
 ```
 
