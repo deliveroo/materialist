@@ -76,10 +76,19 @@ module Materialist
           @options = klass.materialist_options
         end
 
-        def upsert
+        def upsert(retry_on_race_condition: true)
           upsert_record.tap do |entity|
             instance.send(after_upsert, entity) if after_upsert
           end
+        rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+          # when there is a race condition and uniqueness of :source_url
+          # is enforced by database index, this error is raised
+          # so we simply try upsert again
+          # if error is due to another type of uniqueness constraint
+          # second call will also fail and error would bubble up
+          retry_on_race_condition ?
+            upsert(retry_on_race_condition: false) :
+            raise
         end
 
         def destroy

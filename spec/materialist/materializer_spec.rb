@@ -49,7 +49,14 @@ RSpec.describe Materialist::Materializer do
       end
 
       class << self
+        attr_accessor :error_to_throw_once_in_find_or_initialize_by
+
         def find_or_initialize_by(source_url:)
+          if(err = error_to_throw_once_in_find_or_initialize_by)
+            self.error_to_throw_once_in_find_or_initialize_by = nil
+            raise err
+          end
+
           (all[source_url] || Foobar.new).tap do |record|
             record.source_url = source_url
           end
@@ -78,6 +85,11 @@ RSpec.describe Materialist::Materializer do
           all.keys.size
         end
       end
+    end
+
+    module ActiveRecord
+      class RecordNotUnique < StandardError; end
+      class RecordInvalid < StandardError; end
     end
 
     let(:country_url) { 'https://service.dev/countries/1' }
@@ -132,6 +144,34 @@ RSpec.describe Materialist::Materializer do
           expect{perform}.to change{Foobar.count}.by -1
         end
       end
+    end
+
+    context "when there is a race condition between a create and update" do
+      let(:error) {   }
+      let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
+
+      before { Foobar.error_to_throw_once_in_find_or_initialize_by = error }
+
+      [ ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid ].each do |error_type|
+        context "when error of type #{error_type.name} is thrown" do
+          let(:error) { error_type }
+
+          it "still updates the record" do
+            expect{ perform }.to change { record.reload.name }
+              .from('mo').to('jack')
+          end
+
+          context "if error was thrown second time" do
+            before { allow(Foobar).to receive(:find_or_initialize_by).and_raise error }
+
+            it "bubbles up the error" do
+              expect{ perform }.to raise_error error
+            end
+          end
+
+        end
+      end
+
     end
 
     %i(create update noop).each do |action_name|
