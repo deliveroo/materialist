@@ -10,3 +10,4 @@ tags
 coverage/
 .byebug_history
 *.gem
+.Gemfile.lock
