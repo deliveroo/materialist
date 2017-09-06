@@ -17,4 +17,14 @@ Gem::Specification.new do |spec|
   spec.require_paths = %w(lib)
 
   spec.add_runtime_dependency 'sidekiq'
+  spec.add_runtime_dependency 'activesupport'
+  spec.add_runtime_dependency 'routemaster-drain', '>= 3.0'
+
+  spec.add_development_dependency 'dotenv'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'codecov'
+  spec.add_development_dependency 'webmock'
+  spec.add_development_dependency 'pry'
+  spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'appraisal'
 end
