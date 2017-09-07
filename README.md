@@ -146,6 +146,11 @@ describes materializing from a relation of the resource. This can be nested to a
 
 When inside the block of a `link` any other part of DSL can be used and will be evaluated in the context of the relation resource.
 
+### `materialize_link <key>, topic: <topic> (default: key)`
+describes materializing the linked entity.
+This simulates a `:noop` event on the given topic and the `url` if the
+liked resource `<key>` as it appears on the response (`_links`)
+
 #### `after_upsert <method>` -- also `after_destroy`
 describes the name of the instance method to be invoked after a record was materialized.
 
