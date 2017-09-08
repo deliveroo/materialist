@@ -116,29 +116,31 @@ require 'materialist/materializer'
 class ZoneMaterializer
   include Materialist::Materializer
 
-  use_model :zone
+  persist_to :zone
 
-  materialize :id, as: :orderweb_id
-  materialize :code
-  materialize :name
+  capture :id, as: :orderweb_id
+  capture :code
+  capture :name
 
   link :city do
-    materialize :tz_name, as: :timezone
+    capture :tz_name, as: :timezone
 
     link :country do
-      materialize :name, as: :country_name
-      materialize :iso_alpha2_code, as: :country_iso_alpha2_code
+      capture :name, as: :country_name
+      capture :iso_alpha2_code, as: :country_iso_alpha2_code
     end
   end
+
+  materialize_link :settings, topic: :zone_settings
 end
 ```
 
 Here is what each part of the DSL mean:
 
-#### `use_model <model_name>`
+#### `persist_to <model_name>`
 describes the name of the active record model to be used.
 
-#### `materialize <key>, as: <column> (default: key)`
+#### `capture <key>, as: <column> (default: key)`
 describes mapping a resource key to database column.
 
 #### `link <key>`

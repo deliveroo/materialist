@@ -10,17 +10,17 @@ RSpec.describe Materialist::Materializer do
       class FoobarMaterializer
         include Materialist::Materializer
 
-        use_model :foobar
-        materialize :name
-        materialize :age, as: :how_old
+        persist_to :foobar
+        capture :name
+        capture :age, as: :how_old
 
         materialize_link :city
 
         link :city do
-          materialize :timezone
+          capture :timezone
 
           link :country do
-            materialize :tld, as: :country_tld
+            capture :tld, as: :country_tld
           end
         end
       end
@@ -28,8 +28,8 @@ RSpec.describe Materialist::Materializer do
       class CityMaterializer
         include Materialist::Materializer
 
-        use_model :city
-        materialize :name
+        persist_to :city
+        capture :name
       end
     end
 
@@ -243,7 +243,7 @@ RSpec.describe Materialist::Materializer do
         class FoobarMaterializer
           include Materialist::Materializer
 
-          use_model :foobar
+          persist_to :foobar
           after_upsert :my_method
 
           def my_method(entity)
@@ -277,7 +277,7 @@ RSpec.describe Materialist::Materializer do
         class FoobarMaterializer
           include Materialist::Materializer
 
-          use_model :foobar
+          persist_to :foobar
           after_destroy :my_method
 
           def my_method(entity)
