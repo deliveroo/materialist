@@ -1,5 +1,6 @@
 require 'active_support/inflector'
 require 'routemaster/api_client'
+require_relative './event_worker'
 
 module Materialist
   module Materializer
@@ -9,7 +10,10 @@ module Materialist
       base.extend(Internals::DSL)
 
       root_mapping = []
-      base.instance_variable_set(:@materialist_options, { mapping: root_mapping })
+      base.instance_variable_set(:@__materialist_options, {
+        mapping: root_mapping,
+        links_to_materialize: {}
+      })
       base.instance_variable_set(:@__materialist_dsl_mapping_stack, [root_mapping])
     end
 
@@ -33,7 +37,7 @@ module Materialist
       end
 
       module ClassMethods
-        attr_reader :materialist_options, :__materialist_dsl_mapping_stack
+        attr_reader :__materialist_options, :__materialist_dsl_mapping_stack
 
         def perform(url, action)
           materializer = Materializer.new(url, self)
@@ -42,6 +46,10 @@ module Materialist
       end
 
       module DSL
+
+        def materialize_link(key, topic: key)
+          __materialist_options[:links_to_materialize][key] = { topic: topic }
+        end
 
         def materialize(key, as: key)
           __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
@@ -56,15 +64,15 @@ module Materialist
         end
 
         def use_model(klass)
-          materialist_options[:model_class] = klass
+          __materialist_options[:model_class] = klass
         end
 
         def after_upsert(method_name)
-          materialist_options[:after_upsert] = method_name
+          __materialist_options[:after_upsert] = method_name
         end
 
         def after_destroy(method_name)
-          materialist_options[:after_destroy] = method_name
+          __materialist_options[:after_destroy] = method_name
         end
       end
 
@@ -73,12 +81,15 @@ module Materialist
         def initialize(url, klass)
           @url = url
           @instance = klass.new
-          @options = klass.materialist_options
+          @options = klass.__materialist_options
         end
 
         def upsert(retry_on_race_condition: true)
+          return unless root_resource
+
           upsert_record.tap do |entity|
             instance.send(after_upsert, entity) if after_upsert
+            materialize_links
           end
         rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
           # when there is a race condition and uniqueness of :source_url
@@ -110,6 +121,24 @@ module Materialist
           end
         end
 
+        def materialize_links
+          (options[:links_to_materialize] || [])
+            .each { |key, opts| materialize_link(key, opts) }
+        end
+
+        def materialize_link(key, opts)
+          return unless root_resource.body._links.include?(key)
+
+          # this can't happen asynchronously
+          # because the handler options are unavailable in this context
+          # :(
+          ::Materialist::EventWorker.new.perform({
+            'topic' => opts[:topic],
+            'url' => root_resource.body._links[key].href,
+            'type' => 'noop'
+          })
+        end
+
         def mapping
           options.fetch :mapping
         end
@@ -127,7 +156,11 @@ module Materialist
         end
 
         def attributes
-          build_attributes resource_at(url), mapping
+          build_attributes root_resource, mapping
+        end
+
+        def root_resource
+          @_root_resource ||= resource_at(url)
         end
 
         def build_attributes(resource, mapping)
@@ -139,7 +172,7 @@ module Materialist
               result.tap { |r| r[m.as] = resource.body[m.key] }
             when LinkMapping
               resource.body._links.include?(m.key) ?
-                result.merge(build_attributes(resource_at(resource.send(m.key).url, allow_nil: true), m.mapping || [])) :
+                result.merge(build_attributes(resource_at(resource.send(m.key).url), m.mapping || [])) :
                 result
             else
               result
@@ -147,10 +180,13 @@ module Materialist
           end
         end
 
-        def resource_at(url, allow_nil: false)
+        def resource_at(url)
           api_client.get(url, options: { enable_caching: false })
         rescue Routemaster::Errors::ResourceNotFound
-          raise unless allow_nil
+          # this is due to a race condition between an upsert event
+          # and a :delete event
+          # when this happens we should silently ignore the case
+          nil
         end
 
         def api_client

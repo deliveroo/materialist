@@ -14,6 +14,8 @@ RSpec.describe Materialist::Materializer do
         materialize :name
         materialize :age, as: :how_old
 
+        materialize_link :city
+
         link :city do
           materialize :timezone
 
@@ -22,12 +24,17 @@ RSpec.describe Materialist::Materializer do
           end
         end
       end
+
+      class CityMaterializer
+        include Materialist::Materializer
+
+        use_model :city
+        materialize :name
+      end
     end
 
     # this class mocks active record behaviour
-    class Foobar
-      attr_accessor :source_url, :name, :how_old, :age, :timezone, :country_tld
-
+    class BaseModel
       def update_attributes(attrs)
         attrs.each { |k, v| send("#{k}=", v) }
       end
@@ -57,7 +64,7 @@ RSpec.describe Materialist::Materializer do
             raise err
           end
 
-          (all[source_url] || Foobar.new).tap do |record|
+          (all[source_url] || self.new).tap do |record|
             record.source_url = source_url
           end
         end
@@ -74,17 +81,29 @@ RSpec.describe Materialist::Materializer do
         end
 
         def all
-          @@_store ||= {}
+          store[self.name] ||= {}
         end
 
-        def flush_all
-          @@_store = {}
+        def destroy_all
+          store[self.name] = {}
+        end
+
+        def store
+          @@_store ||= {}
         end
 
         def count
           all.keys.size
         end
       end
+    end
+
+    class Foobar < BaseModel
+      attr_accessor :source_url, :name, :how_old, :age, :timezone, :country_tld
+    end
+
+    class City < BaseModel
+      attr_accessor :source_url, :name
     end
 
     module ActiveRecord
@@ -95,11 +114,13 @@ RSpec.describe Materialist::Materializer do
     let(:country_url) { 'https://service.dev/countries/1' }
     let(:country_body) {{ tld: 'fr' }}
     let(:city_url) { 'https://service.dev/cities/1' }
-    let(:city_body) {{ _links: { country: { href: country_url }}, timezone: 'Europe/Paris' }}
+    let(:city_body) {{ _links: { country: { href: country_url }}, name: 'paris', timezone: 'Europe/Paris' }}
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
     before do
-      Foobar.flush_all
+      Foobar.destroy_all
+      City.destroy_all
+
       stub_request(:get, source_url).to_return(
         status: 200,
         body: source_body.to_json,
@@ -120,13 +141,20 @@ RSpec.describe Materialist::Materializer do
     let(:action) { :create }
     let(:perform) { FoobarMaterializer.perform(source_url, action) }
 
-    it "inserts record in db" do
+    it "materializes record in db" do
       expect{perform}.to change{Foobar.count}.by 1
       inserted = Foobar.find_by(source_url: source_url)
       expect(inserted.name).to eq source_body[:name]
       expect(inserted.how_old).to eq source_body[:age]
       expect(inserted.timezone).to eq city_body[:timezone]
       expect(inserted.country_tld).to eq country_body[:tld]
+    end
+
+    it "materializes linked record separately in db" do
+      expect{perform}.to change{City.count}.by 1
+
+      inserted = City.find_by(source_url: city_url)
+      expect(inserted.name).to eq city_body[:name]
     end
 
     context "when record already exists" do
@@ -194,8 +222,8 @@ RSpec.describe Materialist::Materializer do
     context "if resource returns 404" do
       before { stub_request(:get, source_url).to_return(status: 404) }
 
-      it "bubbles up routemaster not found error" do
-        expect { perform }.to raise_error Routemaster::Errors::ResourceNotFound
+      it "does not add anything to db" do
+        expect{perform}.to change{Foobar.count}.by 0
       end
     end
 
@@ -276,7 +304,7 @@ RSpec.describe Materialist::Materializer do
 
         context "when resource doesn't exist locally" do
           it "does not raise error" do
-            Foobar.flush_all
+            Foobar.destroy_all
             expect{ perform }.to_not raise_error
           end
         end
