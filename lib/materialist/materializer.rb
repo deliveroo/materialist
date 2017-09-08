@@ -123,7 +123,7 @@ module Materialist
         end
 
         def model_class
-          options.fetch(:model_class).to_s.classify.constantize
+          options.fetch(:model_class).to_s.camelize.constantize
         end
 
         def attributes
