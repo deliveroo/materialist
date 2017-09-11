@@ -117,25 +117,22 @@ RSpec.describe Materialist::Materializer do
     let(:city_body) {{ _links: { country: { href: country_url }}, name: 'paris', timezone: 'Europe/Paris' }}
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
+
+    def stub_resource(url, body)
+      stub_request(:get, url).to_return(
+        status: 200,
+        body: body.to_json,
+        headers:  { 'Content-Type' => 'application/json' }
+      )
+    end
+
     before do
       Foobar.destroy_all
       City.destroy_all
 
-      stub_request(:get, source_url).to_return(
-        status: 200,
-        body: source_body.to_json,
-        headers:  { 'Content-Type' => 'application/json' }
-      )
-      stub_request(:get, country_url).to_return(
-        status: 200,
-        body: country_body.to_json,
-        headers:  { 'Content-Type' => 'application/json' }
-      )
-      stub_request(:get, city_url).to_return(
-        status: 200,
-        body: city_body.to_json,
-        headers:  { 'Content-Type' => 'application/json' }
-      )
+      stub_resource source_url, source_body
+      stub_resource country_url, country_body
+      stub_resource city_url, city_body
     end
 
     let(:action) { :create }
@@ -310,6 +307,32 @@ RSpec.describe Materialist::Materializer do
         end
       end
 
+    end
+
+    context "when not materializing self but materializing linked parent" do
+      class CitySettingsMaterializer
+        include Materialist::Materializer
+
+        materialize_link :city
+      end
+
+      let(:city_settings_url) { 'https://service.dev/city_settings/1' }
+      let(:city_settings_body) {{ _links: { city: { href: city_url }}}}
+      before { stub_resource city_settings_url, city_settings_body }
+
+      let(:perform) { CitySettingsMaterializer.perform(city_settings_url, action) }
+
+      it "materializes linked parent" do
+        expect{perform}.to change{City.count}.by 1
+      end
+
+      context "when action is :delete" do
+        let(:action) { :delete }
+
+        it "does not materialize linked parent" do
+          expect{perform}.to_not change{City.count}
+        end
+      end
     end
   end
 end
