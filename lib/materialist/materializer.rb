@@ -87,10 +87,13 @@ module Materialist
         def upsert(retry_on_race_condition: true)
           return unless root_resource
 
-          upsert_record.tap do |entity|
-            instance.send(after_upsert, entity) if after_upsert
-            materialize_links
+          if materialize_self?
+            upsert_record.tap do |entity|
+              instance.send(after_upsert, entity) if after_upsert
+            end
           end
+
+          materialize_links
         rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
           # when there is a race condition and uniqueness of :source_url
           # is enforced by database index, this error is raised
@@ -103,6 +106,7 @@ module Materialist
         end
 
         def destroy
+          return unless materialize_self?
           model_class.find_by(source_url: url).tap do |entity|
             entity.destroy!.tap do |entity|
               instance.send(after_destroy, entity) if after_destroy
@@ -113,6 +117,10 @@ module Materialist
         private
 
         attr_reader :url, :instance, :options
+
+        def materialize_self?
+          options.include? :model_class
+        end
 
         def upsert_record
           model_class.find_or_initialize_by(source_url: url).tap do |entity|
