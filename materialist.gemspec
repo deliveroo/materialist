@@ -16,7 +16,7 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^spec/})
   spec.require_paths = %w(lib)
 
-  spec.add_runtime_dependency 'sidekiq'
+  spec.add_runtime_dependency 'sidekiq', '>= 5.0'
   spec.add_runtime_dependency 'activesupport'
   spec.add_runtime_dependency 'routemaster-drain', '>= 3.0'
 
