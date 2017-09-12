@@ -51,7 +51,7 @@ module Materialist
           __materialist_options[:links_to_materialize][key] = { topic: topic }
         end
 
-        def materialize(key, as: key)
+        def capture(key, as: key)
           __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
         end
 
@@ -63,7 +63,7 @@ module Materialist
           __materialist_dsl_mapping_stack.pop
         end
 
-        def use_model(klass)
+        def persist_to(klass)
           __materialist_options[:model_class] = klass
         end
 

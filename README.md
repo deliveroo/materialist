@@ -116,31 +116,33 @@ require 'materialist/materializer'
 class ZoneMaterializer
   include Materialist::Materializer
 
-  use_model :zone
+  persist_to :zone
 
-  materialize :id, as: :orderweb_id
-  materialize :code
-  materialize :name
+  capture :id, as: :orderweb_id
+  capture :code
+  capture :name
 
   link :city do
-    materialize :tz_name, as: :timezone
+    capture :tz_name, as: :timezone
 
     link :country do
-      materialize :name, as: :country_name
-      materialize :iso_alpha2_code, as: :country_iso_alpha2_code
+      capture :name, as: :country_name
+      capture :iso_alpha2_code, as: :country_iso_alpha2_code
     end
   end
+
+  materialize_link :settings, topic: :zone_settings
 end
 ```
 
 Here is what each part of the DSL mean:
 
-#### `use_model <model_name>`
-describes the name of the active record model to be used.  
+#### `persist_to <model_name>`
+describes the name of the active record model to be used.
 If missing, materialist skips materialising the resource itself, but will continue
 with any other functionality -- such as `materialize_link`.
 
-#### `materialize <key>, as: <column> (default: key)`
+#### `capture <key>, as: <column> (default: key)`
 describes mapping a resource key to database column.
 
 #### `link <key>`
@@ -150,8 +152,8 @@ When inside the block of a `link` any other part of DSL can be used and will be 
 
 ### `materialize_link <key>, topic: <topic> (default: key)`
 describes materializing the linked entity.
-This simulates a `:noop` event on the given topic and the `url` if the
-liked resource `<key>` as it appears on the response (`_links`)
+This simulates a `:noop` event on the given topic and the `url` of the
+liked resource `<key>` as it appears on the response (`_links`) -- meaning the materializer for the given topic will be invoked.
 
 #### `after_upsert <method>` -- also `after_destroy`
 describes the name of the instance method to be invoked after a record was materialized.
