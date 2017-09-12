@@ -139,6 +139,8 @@ Here is what each part of the DSL mean:
 
 #### `persist_to <model_name>`
 describes the name of the active record model to be used.
+If missing, materialist skips materialising the resource itself, but will continue
+with any other functionality -- such as `materialize_link`.
 
 #### `capture <key>, as: <column> (default: key)`
 describes mapping a resource key to database column.
