@@ -25,7 +25,7 @@ module Materialist
     end
 
     def worker
-      @_worker ||= Materialist::EventWorker.set(options.slice(:queue))
+      Materialist::EventWorker.set(options.slice(:queue))
     end
   end
 end
