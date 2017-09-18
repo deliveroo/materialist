@@ -36,6 +36,15 @@ module Materialist
         attr_reader :key, :mapping
       end
 
+      class LinkHrefMapping
+        def initialize(key:, as:)
+          @key = key
+          @as = as
+        end
+
+        attr_reader :key, :as
+      end
+
       module ClassMethods
         attr_reader :__materialist_options, :__materialist_dsl_mapping_stack
 
@@ -53,6 +62,10 @@ module Materialist
 
         def capture(key, as: key)
           __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
+        end
+
+        def capture_link_href(key, as:)
+          __materialist_dsl_mapping_stack.last << LinkHrefMapping.new(key: key, as: as)
         end
 
         def link(key)
@@ -178,6 +191,12 @@ module Materialist
             case m
             when FieldMapping
               result.tap { |r| r[m.as] = resource.body[m.key] }
+            when LinkHrefMapping
+              result.tap do |r|
+                if resource.body._links.include?(m.key)
+                  r[m.as] = resource.body._links[m.key].href
+                end
+              end
             when LinkMapping
               resource.body._links.include?(m.key) ?
                 result.merge(build_attributes(resource_at(resource.send(m.key).url), m.mapping || [])) :
