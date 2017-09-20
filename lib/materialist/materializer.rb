@@ -67,12 +67,12 @@ module Materialist
           __materialist_options[:model_class] = klass
         end
 
-        def after_upsert(method_name)
-          __materialist_options[:after_upsert] = method_name
+        def after_upsert(*method_array)
+          __materialist_options[:after_upsert] = method_array
         end
 
-        def after_destroy(method_name)
-          __materialist_options[:after_destroy] = method_name
+        def after_destroy(*method_array)
+          __materialist_options[:after_destroy] = method_array
         end
       end
 
@@ -89,7 +89,7 @@ module Materialist
 
           if materialize_self?
             upsert_record.tap do |entity|
-              instance.send(after_upsert, entity) if after_upsert
+              send_messages(after_upsert, entity) unless after_upsert.nil?
             end
           end
 
@@ -109,7 +109,7 @@ module Materialist
           return unless materialize_self?
           model_class.find_by(source_url: url).tap do |entity|
             entity.destroy!.tap do |entity|
-              instance.send(after_destroy, entity) if after_destroy
+              send_messages(after_destroy, entity) unless after_destroy.nil?
             end if entity
           end
         end
@@ -201,6 +201,10 @@ module Materialist
           @_api_client ||= Routemaster::APIClient.new(
             response_class: Routemaster::Responses::HateoasResponse
           )
+        end
+
+        def send_messages(messages, arguments)
+            messages.each { |message| instance.send(message, arguments) }
         end
       end
     end

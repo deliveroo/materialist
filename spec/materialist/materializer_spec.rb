@@ -255,6 +255,18 @@ RSpec.describe Materialist::Materializer do
           it "calls after_upsert method" do
             expect{ perform }.to change { record.actions_called[:after_upsert] }
           end
+
+          it "calls more than one after_upsert method" do
+            class FoobarMaterializer
+              after_upsert :my_method, :my_method2
+
+              def my_method2(entity)
+                entity.actions_called[:after_upsert2] = true
+              end
+            end
+            expect{ perform }.to  change { record.actions_called[:after_upsert]  }
+                             .and change { record.actions_called[:after_upsert2] }
+          end
         end
       end
 
@@ -297,6 +309,18 @@ RSpec.describe Materialist::Materializer do
 
         it "calls after_destroy method" do
           expect{ perform }.to change { record.actions_called[:after_destroy] }
+        end
+
+        it "calls more than one after_destroy method" do
+          class FoobarMaterializer
+            after_destroy :my_method, :my_method2
+
+            def my_method2(entity)
+              entity.actions_called[:after_destroy2] = true
+            end
+          end
+          expect{ perform }.to change  { record.actions_called[:after_destroy]  }
+                           .and change { record.actions_called[:after_destroy2] }
         end
 
         context "when resource doesn't exist locally" do
