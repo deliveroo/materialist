@@ -189,8 +189,8 @@ module Materialist
         end
 
         def serializable_value(value)
-          value_is_complex = [Hash, Array].any? { |complex| value.is_a?(complex) }
-          value_is_complex ? value.to_json : value
+          value_is_complex_object = value.is_a?(Hash) || value.is_a?(Array)
+          value_is_complex_object ? value.to_json : value
         end
 
         def resource_at(url)
