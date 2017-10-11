@@ -177,7 +177,7 @@ module Materialist
           mapping.inject({}) do |result, m|
             case m
             when FieldMapping
-              result.tap { |r| r[m.as] = resource.body[m.key] }
+              result.tap { |r| r[m.as] = serializable_value(resource.body[m.key]) }
             when LinkMapping
               resource.body._links.include?(m.key) ?
                 result.merge(build_attributes(resource_at(resource.send(m.key).url), m.mapping || [])) :
@@ -186,6 +186,11 @@ module Materialist
               result
             end
           end
+        end
+
+        def serializable_value(value)
+          value_is_complex_object = value.is_a?(Hash) || value.is_a?(Array)
+          value_is_complex_object ? value.to_json : value
         end
 
         def resource_at(url)
