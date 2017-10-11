@@ -158,16 +158,19 @@ describes materializing the linked entity.
 This simulates a `:noop` event on the given topic and the `url` of the
 liked resource `<key>` as it appears on the response (`_links`) -- meaning the materializer for the given topic will be invoked.
 
-#### `after_upsert <method>` -- also `after_destroy`
-describes the name of the instance method to be invoked after a record was materialized.
+#### `after_upsert <method> (, <method>(, ...))` -- also `after_destroy`
+describes the name of the instance method(s) to be invoked after a record was materialized.
 
 ```ruby
 class ZoneMaterializer
   include Materialist::Materializer
 
-  after_upsert :my_method
+  after_upsert :my_method, :my_second_method
 
   def my_method(record)
+  end
+  
+  def my_second_method(record)
   end
 end
 ```
