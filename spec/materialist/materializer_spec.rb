@@ -13,6 +13,8 @@ RSpec.describe Materialist::Materializer do
         persist_to :foobar
         capture :name
         capture :age, as: :how_old
+        capture_link_href :city, as: :city_url
+        capture_link_href :account, as: :account_url
 
         materialize_link :city
 
@@ -99,7 +101,8 @@ RSpec.describe Materialist::Materializer do
     end
 
     class Foobar < BaseModel
-      attr_accessor :source_url, :name, :how_old, :age, :timezone, :country_tld
+      attr_accessor :source_url, :name, :how_old, :age, :timezone,
+        :country_tld, :city_url, :account_url
     end
 
     class City < BaseModel
@@ -148,6 +151,7 @@ RSpec.describe Materialist::Materializer do
       expect(inserted.how_old).to eq source_body[:age]
       expect(inserted.timezone).to eq city_body[:timezone]
       expect(inserted.country_tld).to eq country_body[:tld]
+      expect(inserted.account_url).to be_nil
     end
 
     it "materializes linked record separately in db" do

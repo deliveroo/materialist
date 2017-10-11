@@ -143,7 +143,10 @@ If missing, materialist skips materialising the resource itself, but will contin
 with any other functionality -- such as `materialize_link`.
 
 #### `capture <key>, as: <column> (default: key)`
-describes mapping a resource key to database column.
+describes mapping a resource key to a database column.
+
+#### `capture_link_href <key>, as: <column>`
+describes mapping a link href (as it appears on the hateous response) to a database column.
 
 #### `link <key>`
 describes materializing from a relation of the resource. This can be nested to any depth as shown above.
