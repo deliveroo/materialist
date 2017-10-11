@@ -150,15 +150,6 @@ RSpec.describe Materialist::Materializer do
       expect(inserted.country_tld).to eq country_body[:tld]
     end
 
-    it "materializes record in db" do
-      expect{perform}.to change{Foobar.count}.by 1
-      inserted = Foobar.find_by(source_url: source_url)
-      expect(inserted.name).to eq source_body[:name]
-      expect(inserted.how_old).to eq source_body[:age]
-      expect(inserted.timezone).to eq city_body[:timezone]
-      expect(inserted.country_tld).to eq country_body[:tld]
-    end
-
     it "materializes linked record separately in db" do
       expect{perform}.to change{City.count}.by 1
 
