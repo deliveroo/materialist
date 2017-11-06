@@ -117,8 +117,6 @@ RSpec.describe Materialist::Materializer do
     let(:city_body) {{ _links: { country: { href: country_url }}, name: 'paris', timezone: 'Europe/Paris' }}
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
-    let(:complex_url) { 'https://service.dev/hashes/1' }
-    let(:complex_body) {{ _links: { city: { href: city_url }}, name: { first_name: 'Mo', last_name: 'Town' }, age: [30,31,44] }}
 
     def stub_resource(url, body)
       stub_request(:get, url).to_return(
@@ -135,7 +133,6 @@ RSpec.describe Materialist::Materializer do
       stub_resource source_url, source_body
       stub_resource country_url, country_body
       stub_resource city_url, city_body
-      stub_resource complex_url, complex_body
     end
 
     let(:action) { :create }
@@ -155,17 +152,6 @@ RSpec.describe Materialist::Materializer do
 
       inserted = City.find_by(source_url: city_url)
       expect(inserted.name).to eq city_body[:name]
-    end
-
-    context "when there are complex value types" do
-      let(:perform) { FoobarMaterializer.perform(complex_url, action) }
-
-      it "serialises the complex value into json" do
-        expect{perform}.to change{Foobar.count}.by 1
-        inserted = Foobar.find_by(source_url: complex_url)
-        expect(inserted.name).to eq complex_body[:name].to_json
-        expect(inserted.how_old).to eq complex_body[:age].to_json
-      end
     end
 
     context "when record already exists" do
