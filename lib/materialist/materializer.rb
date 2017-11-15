@@ -80,6 +80,11 @@ module Materialist
           __materialist_options[:model_class] = klass
         end
 
+        def source_key(key, url_parser: nil)
+          __materialist_options[:source_key] = key
+          __materialist_options[:url_parser] = url_parser
+        end
+
         def after_upsert(*method_array)
           __materialist_options[:after_upsert] = method_array
         end
@@ -120,7 +125,7 @@ module Materialist
 
         def destroy
           return unless materialize_self?
-          model_class.find_by(source_url: url).tap do |entity|
+          model_class.find_by(source_lookup(url)).tap do |entity|
             entity.destroy!.tap do |entity|
               send_messages(after_destroy, entity) unless after_destroy.nil?
             end if entity
@@ -136,7 +141,7 @@ module Materialist
         end
 
         def upsert_record
-          model_class.find_or_initialize_by(source_url: url).tap do |entity|
+          model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
             entity.update_attributes attributes
             entity.save!
           end
@@ -174,6 +179,18 @@ module Materialist
 
         def model_class
           options.fetch(:model_class).to_s.camelize.constantize
+        end
+
+        def source_key
+          options.fetch(:source_key, :source_url)
+        end
+
+        def url_parser
+          options[:url_parser] || ->url { url }
+        end
+
+        def source_lookup(url)
+          @_source_lookup ||= { source_key => url_parser.call(url) }
         end
 
         def attributes
