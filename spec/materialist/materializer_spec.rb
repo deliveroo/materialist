@@ -41,7 +41,7 @@ RSpec.describe Materialist::Materializer do
 
         persist_to :defined_source
 
-        source_key(:source_id) do |url|
+        source_key :source_id do |url|
           url.split('/').last.to_i
         end
 
