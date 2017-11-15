@@ -118,6 +118,10 @@ class ZoneMaterializer
 
   persist_to :zone
 
+  source_key :source_id do |url|
+    /(\d+)\/?$/.match(url)[1]
+  end
+
   capture :id, as: :orderweb_id
   capture :code
   capture :name
@@ -141,6 +145,12 @@ Here is what each part of the DSL mean:
 describes the name of the active record model to be used.
 If missing, materialist skips materialising the resource itself, but will continue
 with any other functionality -- such as `materialize_link`.
+
+
+#### `source_key <column> <url_parser_block> (default: url)`
+describes the column used to persist the unique identifier parsed from the url_parser_block.
+By default the column used is `:source_url` and the original `url` is used as the identifier.
+Passing an optional block allows you to extract an identifier from the URL.
 
 #### `capture <key>, as: <column> (default: key)`
 describes mapping a resource key to a database column.
@@ -169,7 +179,7 @@ class ZoneMaterializer
 
   def my_method(record)
   end
-  
+
   def my_second_method(record)
   end
 end

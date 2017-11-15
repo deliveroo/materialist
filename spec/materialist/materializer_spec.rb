@@ -11,6 +11,7 @@ RSpec.describe Materialist::Materializer do
         include Materialist::Materializer
 
         persist_to :foobar
+
         capture :name
         capture :age, as: :how_old
         capture_link_href :city, as: :city_url
@@ -31,6 +32,19 @@ RSpec.describe Materialist::Materializer do
         include Materialist::Materializer
 
         persist_to :city
+        source_key :source_url
+        capture :name
+      end
+
+      class DefinedSourceMaterializer
+        include Materialist::Materializer
+
+        persist_to :defined_source
+
+        source_key :source_id do |url|
+          url.split('/').last.to_i
+        end
+
         capture :name
       end
     end
@@ -42,37 +56,49 @@ RSpec.describe Materialist::Materializer do
       end
 
       def save!
-        self.class.all[source_url] = self
+        self.class.all[source_key_value] = self
       end
 
       def destroy!
-        self.class.all.delete source_url
+        self.class.all.delete source_key_value
       end
 
       def reload
-        self.class.all[source_url]
+        self.class.all[source_key_value]
       end
 
       def actions_called
         @_actions_called ||= {}
       end
 
-      class << self
-        attr_accessor :error_to_throw_once_in_find_or_initialize_by
+      private def source_key_value
+        send(self.class.source_key_column)
+      end
 
-        def find_or_initialize_by(source_url:)
+      class << self
+        attr_accessor :error_to_throw_once_in_find_or_initialize_by,
+                      :source_key_column
+
+        def find_or_initialize_by(kv_hash)
           if(err = error_to_throw_once_in_find_or_initialize_by)
             self.error_to_throw_once_in_find_or_initialize_by = nil
             raise err
           end
 
-          (all[source_url] || self.new).tap do |record|
-            record.source_url = source_url
+          key_value = kv_hash[source_key_column]
+
+          (all[key_value] || self.new).tap do |record|
+            record.send("#{source_key_column}=", key_value)
           end
         end
 
-        def find_by(source_url:)
-          all[source_url]
+        def source_key_column
+          @source_key_column || :source_url
+        end
+
+        def find_by(kv_hash)
+          key_value = kv_hash[source_key_column]
+          all[key_value]
         end
 
         def create!(attrs)
@@ -109,6 +135,11 @@ RSpec.describe Materialist::Materializer do
       attr_accessor :source_url, :name
     end
 
+    class DefinedSource < BaseModel
+      attr_accessor :source_id, :name
+      self.source_key_column = :source_id
+    end
+
     module ActiveRecord
       class RecordNotUnique < StandardError; end
       class RecordInvalid < StandardError; end
@@ -120,6 +151,9 @@ RSpec.describe Materialist::Materializer do
     let(:city_body) {{ _links: { country: { href: country_url }}, name: 'paris', timezone: 'Europe/Paris' }}
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
+    let(:defined_source_id) { 65 }
+    let(:defined_source_url) { "https://service.dev/defined_sources/#{defined_source_id}" }
+    let(:defined_source_body) {{ name: 'ben' }}
 
     def stub_resource(url, body)
       stub_request(:get, url).to_return(
@@ -132,10 +166,12 @@ RSpec.describe Materialist::Materializer do
     before do
       Foobar.destroy_all
       City.destroy_all
+      DefinedSource.destroy_all
 
       stub_resource source_url, source_body
       stub_resource country_url, country_body
       stub_resource city_url, city_body
+      stub_resource defined_source_url, defined_source_body
     end
 
     let(:action) { :create }
@@ -360,6 +396,50 @@ RSpec.describe Materialist::Materializer do
         it "does not materialize linked parent" do
           expect{perform}.to_not change{City.count}
         end
+      end
+    end
+
+    context "when creating a new entity based on the source_key column" do
+      let(:perform) { DefinedSourceMaterializer.perform(defined_source_url, action) }
+
+      it "creates based on source_key" do
+        expect{perform}.to change{DefinedSource.count}.by 1
+      end
+
+      it "sets the correct source key" do
+        perform
+        inserted = DefinedSource.find_by(source_id: defined_source_id)
+        expect(inserted.source_id).to eq defined_source_id
+        expect(inserted.name).to eq defined_source_body[:name]
+      end
+    end
+
+    context "when updating a new entity based on the source_key column" do
+      let(:action) { :update }
+      let!(:record) { DefinedSource.create!(source_id: defined_source_id, name: 'mo') }
+      let(:perform) { DefinedSourceMaterializer.perform(defined_source_url, action) }
+
+      it "updates based on source_key" do
+        perform
+        expect(DefinedSource.count).to eq 1
+      end
+
+      it "updates the existing record" do
+        perform
+        inserted = DefinedSource.find_by(source_id: defined_source_id)
+        expect(inserted.source_id).to eq defined_source_id
+        expect(inserted.name).to eq defined_source_body[:name]
+      end
+    end
+
+    context "when deleting an entity based on the source_key column" do
+      let(:action) { :delete }
+      let!(:record) { DefinedSource.create!(source_id: defined_source_id, name: 'mo') }
+      let(:perform) { DefinedSourceMaterializer.perform(defined_source_url, action) }
+
+      it "deletes based on source_key" do
+        perform
+        expect(DefinedSource.count).to eq 0
       end
     end
   end
