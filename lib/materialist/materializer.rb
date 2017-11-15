@@ -80,9 +80,9 @@ module Materialist
           __materialist_options[:model_class] = klass
         end
 
-        def source_key(key, url_parser: nil)
+        def source_key(key, &url_parser_block)
           __materialist_options[:source_key] = key
-          __materialist_options[:url_parser] = url_parser
+          __materialist_options[:url_parser] = url_parser_block
         end
 
         def after_upsert(*method_array)

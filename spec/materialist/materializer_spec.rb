@@ -40,7 +40,11 @@ RSpec.describe Materialist::Materializer do
         include Materialist::Materializer
 
         persist_to :defined_source
-        source_key :source_id, url_parser: -> url { url.split('/').last.to_i }
+
+        source_key(:source_id) do |url|
+          url.split('/').last.to_i
+        end
+
         capture :name
       end
     end
