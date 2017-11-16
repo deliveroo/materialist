@@ -59,7 +59,18 @@ RSpec.describe Materialist::EventHandler do
 
       it "enqueues the event in the given queue" do
         expect(Materialist::EventWorker).to receive(:set)
-          .with(queue: queue_name)
+          .with(queue: queue_name, retry: 10)
+        expect(worker_double).to receive(:perform_async).with(event)
+        perform
+      end
+    end
+
+    context "when a retry is specified in options" do
+      let(:options) {{ retry: false }}
+
+      it "uses the given retry option for sidekiq" do
+        expect(Materialist::EventWorker).to receive(:set)
+          .with(retry: false)
         expect(worker_double).to receive(:perform_async).with(event)
         perform
       end
