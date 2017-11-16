@@ -64,7 +64,8 @@ Where options could be:
 
 - `topics` (only when using in `.subscribe`): An array of topics to be used.
 If not provided nothing would be materialized.
-- `queue`: name of the queue to be used by sidekiq worker
+- `queue` (optional): name of the queue to be used by sidekiq worker
+- `retry` (default: `10`): sidekiq retry policy to be used.
 
 Then there are two ways to configure materialist in routemaster:
 

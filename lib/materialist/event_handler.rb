@@ -4,8 +4,11 @@ require_relative './event_worker'
 module Materialist
   class EventHandler
 
+    # 10 retries takes approximately 6 hours
+    DEFAULT_OPTIONS = { retry: 10 }
+
     def initialize(options={})
-      @options = options
+      @options = DEFAULT_OPTIONS.merge(options)
     end
 
     def on_events_received(batch)
@@ -25,7 +28,7 @@ module Materialist
     end
 
     def worker
-      Materialist::EventWorker.set(options.slice(:queue))
+      Materialist::EventWorker.set(options.slice(:queue, :retry))
     end
   end
 end
