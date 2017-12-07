@@ -85,12 +85,20 @@ module Materialist
           __materialist_options[:url_parser] = url_parser_block
         end
 
+        def before_upsert(*method_array)
+          __materialist_options[:before_upsert] = method_array
+        end
+
         def after_upsert(*method_array)
           __materialist_options[:after_upsert] = method_array
         end
 
         def after_destroy(*method_array)
           __materialist_options[:after_destroy] = method_array
+        end
+
+        def before_destroy(*method_array)
+          __materialist_options[:before_destroy] = method_array
         end
       end
 
@@ -126,6 +134,7 @@ module Materialist
         def destroy
           return unless materialize_self?
           model_class.find_by(source_lookup(url)).tap do |entity|
+            send_messages(before_destroy, entity) unless before_destroy.nil?
             entity.destroy!.tap do |entity|
               send_messages(after_destroy, entity) unless after_destroy.nil?
             end if entity
@@ -142,6 +151,7 @@ module Materialist
 
         def upsert_record
           model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
+            send_messages(before_upsert, entity) unless before_upsert.nil?
             entity.update_attributes attributes
             entity.save!
           end
@@ -169,8 +179,16 @@ module Materialist
           options.fetch :mapping
         end
 
+        def before_upsert
+          options[:before_upsert]
+        end
+
         def after_upsert
           options[:after_upsert]
+        end
+
+        def before_destroy
+          options[:before_destroy]
         end
 
         def after_destroy

@@ -274,17 +274,22 @@ RSpec.describe Materialist::Materializer do
       end
     end
 
-    context "when after_upsert is configured" do
+    context "when {after, before}_upsert is configured" do
       let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
       let!(:materializer_class) do
         class FoobarMaterializer
           include Materialist::Materializer
 
           persist_to :foobar
+          before_upsert :my_before_method
           after_upsert :my_method
 
           def my_method(entity)
             entity.actions_called[:after_upsert] = true
+          end
+
+          def my_before_method(entity)
+            entity.actions_called[:before_upsert] = true
           end
         end
       end
@@ -292,20 +297,31 @@ RSpec.describe Materialist::Materializer do
       %i(create update noop).each do |action_name|
         context "when action is :#{action_name}" do
           let(:action) { action_name }
+          it "calls before_upsert method" do
+            expect{ perform }.to change { record.actions_called[:before_upsert] }
+          end
+
           it "calls after_upsert method" do
             expect{ perform }.to change { record.actions_called[:after_upsert] }
           end
 
-          it "calls more than one after_upsert method" do
+          it "calls more than one method" do
             class FoobarMaterializer
+              before_upsert :my_before_method, :my_before_method2
               after_upsert :my_method, :my_method2
 
               def my_method2(entity)
                 entity.actions_called[:after_upsert2] = true
               end
+
+              def my_before_method2(entity)
+                entity.actions_called[:before_upsert2] = true
+              end
             end
-            expect{ perform }.to  change { record.actions_called[:after_upsert]  }
-                             .and change { record.actions_called[:after_upsert2] }
+            expect{ perform }.to  change { record.actions_called[:after_upsert]   }
+                             .and change { record.actions_called[:after_upsert2]  }
+                             .and change { record.actions_called[:before_upsert]  }
+                             .and change { record.actions_called[:before_upsert2] }
           end
         end
       end
@@ -316,21 +332,30 @@ RSpec.describe Materialist::Materializer do
         it "does not call after_upsert method" do
           expect{ perform }.to_not change { record.actions_called[:after_upsert] }
         end
+
+        it "does call after_upsert method" do
+          expect{ perform }.to_not change { record.actions_called[:before_upsert] }
+        end
       end
 
     end
 
-    context "when after_destroy is configured" do
+    context "when {before, after}_destroy is configured" do
       let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
       let!(:materializer_class) do
         class FoobarMaterializer
           include Materialist::Materializer
 
           persist_to :foobar
+          before_destroy :my_before_method
           after_destroy :my_method
 
           def my_method(entity)
             entity.actions_called[:after_destroy] = true
+          end
+
+          def my_before_method(entity)
+            entity.actions_called[:before_destroy] = true unless entity.nil?
           end
         end
       end
@@ -340,6 +365,10 @@ RSpec.describe Materialist::Materializer do
           let(:action) { action_name }
           it "does not call after_destroy method" do
             expect{ perform }.to_not change { record.actions_called[:after_destroy] }
+          end
+
+          it "does not call before_destroy method" do
+            expect{ perform }.to_not change { record.actions_called[:before_destroy] }
           end
         end
       end
@@ -351,16 +380,27 @@ RSpec.describe Materialist::Materializer do
           expect{ perform }.to change { record.actions_called[:after_destroy] }
         end
 
-        it "calls more than one after_destroy method" do
+        it "calls before_destroy method" do
+          expect{ perform }.to change { record.actions_called[:before_destroy] }
+        end
+
+        it "calls more than one method" do
           class FoobarMaterializer
+            before_destroy :my_before_method, :my_before_method2
             after_destroy :my_method, :my_method2
 
             def my_method2(entity)
               entity.actions_called[:after_destroy2] = true
             end
+
+            def my_before_method2(entity)
+              entity.actions_called[:before_destroy2] = true unless entity.nil?
+            end
           end
-          expect{ perform }.to change  { record.actions_called[:after_destroy]  }
-                           .and change { record.actions_called[:after_destroy2] }
+          expect{ perform }.to change  { record.actions_called[:after_destroy]   }
+                           .and change { record.actions_called[:after_destroy2]  }
+                           .and change { record.actions_called[:before_destroy]  }
+                           .and change { record.actions_called[:before_destroy2] }
         end
 
         context "when resource doesn't exist locally" do

@@ -1,3 +1,8 @@
+## 2.3.0
+
+Features:
+ - Add `before_upsert` and `before_destroy` (#31)
+
 ## 2.2.0
 
 Features:
