@@ -51,8 +51,9 @@ RSpec.describe Materialist::Materializer do
 
     # this class mocks active record behaviour
     class BaseModel
-      def update_attributes(attrs)
+      def update_attributes!(attrs)
         attrs.each { |k, v| send("#{k}=", v) }
+        save!
       end
 
       def save!
@@ -103,8 +104,7 @@ RSpec.describe Materialist::Materializer do
 
         def create!(attrs)
           new.tap do |record|
-            record.update_attributes attrs
-            record.save!
+            record.update_attributes! attrs
           end
         end
 

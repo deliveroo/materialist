@@ -152,8 +152,7 @@ module Materialist
         def upsert_record
           model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
-            entity.update_attributes attributes
-            entity.save!
+            entity.update_attributes! attributes
           end
         end
 
