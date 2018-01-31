@@ -1,3 +1,8 @@
+## 2.3.1
+
+Fixes:
+- Fix issue with double `save` in upsert (#32)
+
 ## 2.3.0
 
 Features:
