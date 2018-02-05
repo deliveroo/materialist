@@ -5,10 +5,14 @@ RSpec.describe Materialist::EventWorker do
   describe "#perform" do
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:event) {{ 'topic' => :foobar, 'url' => source_url, 'type' => 'noop' }}
-    let!(:materializer_class) { class FoobarMaterializer; end }
+    let!(:materializer_class) { FoobarMaterializer = Class.new }
 
     before do
       allow(FoobarMaterializer).to receive(:perform)
+    end
+
+    after do
+      Object.send(:remove_const, :FoobarMaterializer)
     end
 
     context "when run synchronously" do

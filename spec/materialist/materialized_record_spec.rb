@@ -6,7 +6,7 @@ RSpec.describe Materialist::MaterializedRecord do
   uses_redis
 
   let!(:materialized_type) do
-    class Foobar
+    Class.new do
       include Materialist::MaterializedRecord
 
       attr_accessor :source_url
@@ -19,7 +19,7 @@ RSpec.describe Materialist::MaterializedRecord do
   end
 
   let(:record) do
-    Foobar.new.tap { |r| r.source_url = source_url }
+    materialized_type.new.tap { |r| r.source_url = source_url }
   end
 
   let(:country_url) { 'https://service.dev/countries/1' }
