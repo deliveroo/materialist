@@ -4,15 +4,13 @@ require_relative './event_worker'
 module Materialist
   class EventHandler
 
-    # 10 retries takes approximately 6 hours
-    DEFAULT_OPTIONS = { retry: 10 }
+    DEFAULT_SIDEKIQ_OPTIONS = { retry: 10 }.freeze
 
-    def initialize(options={})
-      @options = DEFAULT_OPTIONS.merge(options)
+    def initialize
     end
 
     def on_events_received(batch)
-      batch.each { |event| call(event) if topics.include?(event['topic'].to_s) }
+      batch.each { |event| call(event) if should_materialize?(event['topic']) }
     end
 
     def call(event)
@@ -21,14 +19,18 @@ module Materialist
 
     private
 
-    attr_reader :options
+    attr_reader :topics
 
-    def topics
-      @_topics ||= options.fetch(:topics, []).map(&:to_s)
+    def should_materialize?(topic)
+      Materialist.configuration.topics.include?(topic.to_s)
+    end
+
+    def sidekiq_options
+      DEFAULT_SIDEKIQ_OPTIONS.merge(Materialist.configuration.sidekiq_options)
     end
 
     def worker
-      Materialist::EventWorker.set(options.slice(:queue, :retry))
+      Materialist::EventWorker.set(sidekiq_options)
     end
   end
 end
