@@ -3,11 +3,16 @@ require 'materialist/event_handler'
 require 'materialist/event_worker'
 
 RSpec.describe Materialist::EventHandler do
-  let(:options) {{}}
-  subject { described_class.new options }
-
+  let(:topics) {[]}
+  let(:sidekiq_options) {{}}
   let(:worker_double) { double() }
+
   before do
+    Materialist.configure do |config|
+      config.sidekiq_options = sidekiq_options
+      config.topics = topics
+    end
+
     allow(Materialist::EventWorker).to receive(:set)
       .and_return worker_double
   end
@@ -17,7 +22,7 @@ RSpec.describe Materialist::EventHandler do
     let(:perform) { subject.on_events_received events.map() }
 
     context "when no topic is specified" do
-      let(:options) {{ topics: [] }}
+      let(:topics) {[]}
 
       it "doesn't enqueue any event" do
         expect(worker_double).to_not receive(:perform_async)
@@ -26,7 +31,7 @@ RSpec.describe Materialist::EventHandler do
     end
 
     context "when a topic is specified" do
-      let(:options) {{ topics: [:topic_a] }}
+      let(:topics) { %w(topic_a) }
 
       it "enqueues event of that topic" do
         expect(worker_double).to receive(:perform_async).with(events[0])
@@ -35,7 +40,7 @@ RSpec.describe Materialist::EventHandler do
     end
 
     context "when both topics are specified" do
-      let(:options) {{ topics: [:topic_a, :topic_b] }}
+      let(:topics) { %w(topic_a topic_b) }
 
       it "enqueues event of both topics" do
         expect(worker_double).to receive(:perform_async).twice
@@ -55,7 +60,7 @@ RSpec.describe Materialist::EventHandler do
 
     context "if queue name is privided" do
       let(:queue_name) { :some_queue_name }
-      let(:options) {{ queue: queue_name }}
+      let(:sidekiq_options) {{ queue: queue_name }}
 
       it "enqueues the event in the given queue" do
         expect(Materialist::EventWorker).to receive(:set)
@@ -66,7 +71,7 @@ RSpec.describe Materialist::EventHandler do
     end
 
     context "when a retry is specified in options" do
-      let(:options) {{ retry: false }}
+      let(:sidekiq_options) {{ retry: false }}
 
       it "uses the given retry option for sidekiq" do
         expect(Materialist::EventWorker).to receive(:set)

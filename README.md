@@ -52,27 +52,47 @@ class Zone < ApplicationRecord
 end
 ```
 
+### Materialist Configuration
+
+If you need to override any of the materialist configurations,
+you can do so in an `configure/initializers/materialist.rb` file:
+
+
+```ruby
+Materialist.configure do |config|
+  # Configure materialist here. For example:
+  #
+  # config.topics = %w(topic_a topic_b)
+  #
+  # config.sidekiq_options = {
+  #   queue: :routemaster_index,
+  #   retry: 3
+  # }
+  #
+  # config.metrics_client = STATSD
+end
+```
+
+- `topics` (only when using in `.subscribe`): A string array of topics to be used.  
+If not provided nothing would be materialized.
+- `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of optiosn
+- `metrics_client` (optional) -- You can pass your `STATSD` instance
+
 ### Routemaster Configuration
 
 First you need an "event handler":
 
 ```ruby
-handler = Materialist::EventHandler.new({ ...options })
+handler = Materialist::EventHandler.new
 ```
 
 Where options could be:
-
-- `topics` (only when using in `.subscribe`): An array of topics to be used.
-If not provided nothing would be materialized.
-- `queue` (optional): name of the queue to be used by sidekiq worker
-- `retry` (default: `10`): sidekiq retry policy to be used.
 
 Then there are two ways to configure materialist in routemaster:
 
 1. **If you DON'T need resources to be cached in redis:** use `handler` as siphon:
 
 ```ruby
-handler = Materialist::EventHandler.new
 siphon_events = {
   zones:               handler,
   rider_domain_riders: handler
@@ -86,15 +106,9 @@ map '/events' do
 end
 ```
 
-2. **You DO need resources cached in redis:** In this case you need to use `handler` to subscribe to the caching pipeline:
+2. **You DO need resources cached in redis:** In this case you need to provide `topics` in `Materialist.configure` and use `handler` to subscribe to routemaster caching pipeline:
 
 ```ruby
-TOPICS = %w(
-  zones
-  rider_domain_riders
-)
-
-handler = Materialist::EventHandler.new({ topics: TOPICS })
 app = Routemaster::Drain::Caching.new # or ::Basic.new
 app.subscribe(handler, prefix: true)
 # ...

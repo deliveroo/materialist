@@ -20,6 +20,8 @@ RSpec.configure do |config|
   config.raise_errors_for_deprecations!
 
   config.before(:each) do
+    Materialist.reset_configuration!
+    
     # clear database
     ActiveRecord::Base.descendants.each(&:delete_all)
   end

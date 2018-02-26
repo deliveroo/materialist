@@ -4,6 +4,6 @@ services:
   - redis-server
 rvm:
   - 2.4.0
-  - ruby-head
+  - 2.5.0
 script:
   - bundle exec rspec

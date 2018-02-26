@@ -1,3 +1,11 @@
+## 3.0.0
+
+Breaking change:
+- `topics`, `retry` and `queue` options are now configured via `Materialist.configure` block.
+
+Features:
+- Ability to provide metrics client e.g. STATSD
+
 ## 2.3.1
 
 Fixes:
