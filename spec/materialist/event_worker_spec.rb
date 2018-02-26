@@ -55,7 +55,8 @@ RSpec.describe Materialist::EventWorker do
 
       it 'logs latency to metrics' do
         expect(metrics_client).to receive(:histogram).with(
-          "materialist.event_worker.latency",
+          "materialist.event_latency",
+          instance_of(Float),
           tags: ["topic:foobar"]
         )
         perform

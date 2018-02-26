@@ -25,7 +25,8 @@ module Materialist
     def report_latency(topic, timestamp)
       t = (Time.now.to_f - (timestamp.to_i / 1e3)).round(1)
       Materialist.configuration.metrics_client.histogram(
-        "materialist.event_worker.latency",
+        "materialist.event_latency",
+        t,
         tags: ["topic:#{topic}"]
       )
     end

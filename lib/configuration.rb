@@ -24,7 +24,7 @@ module Materialist
 
     class NullMetricsClient
       def self.increment(_, tags:); end
-      def self.histogram(_, tags:); end
+      def self.histogram(_, _v, tags:); end
     end
   end
 end
