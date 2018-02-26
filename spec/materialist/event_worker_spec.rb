@@ -30,6 +30,11 @@ RSpec.describe Materialist::EventWorker do
       perform
     end
 
+    it 'does not log latency' do
+      expect(metrics_client).to_not receive(:histogram)
+      perform
+    end
+
     context 'when there is an error' do
       let(:error){ StandardError.new }
       before do
@@ -42,6 +47,18 @@ RSpec.describe Materialist::EventWorker do
           tags: ["action:noop", "topic:foobar"]
         )
         expect{ perform }.to raise_error error
+      end
+    end
+
+    context 'when event has a timestamp' do
+      let(:event) {{ 'topic' => :foobar, 'url' => source_url, 'type' => 'noop', 't' => '1519659773842' }}
+
+      it 'logs latency to metrics' do
+        expect(metrics_client).to receive(:histogram).with(
+          "materialist.event_worker.latency",
+          tags: ["topic:foobar"]
+        )
+        perform
       end
     end
   end
