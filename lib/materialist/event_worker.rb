@@ -10,11 +10,10 @@ module Materialist
       action = event['type'].to_sym
       timestamp = event['t']
 
-      report_latency(topic, timestamp) if timestamp
-
       materializer = "#{topic.to_s.singularize.classify}Materializer".constantize
       materializer.perform(event['url'], action)
 
+      report_latency(topic, timestamp) if timestamp
       report_stats(topic, action, :success)
     rescue
       report_stats(topic, action, :failure)
