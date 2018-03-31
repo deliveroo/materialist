@@ -71,6 +71,7 @@ RSpec.describe Materialist::Materializer do
 
     let(:action) { :create }
     let(:perform) { materializer_class.perform(source_url, action) }
+    let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
 
     it "materializes record in db" do
       expect{perform}.to change{Foobar.count}.by 1
@@ -168,18 +169,17 @@ RSpec.describe Materialist::Materializer do
 
     context "when {after, before}_upsert is configured" do
       let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
-      let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
       let!(:materializer_class) do
         FoobarMaterializer = Class.new do
           include Materialist::Materializer
-          @@actions_called = {}
+          cattr_accessor(:actions_called) { {} }
 
           persist_to :foobar
           before_upsert :before_hook
           after_upsert :after_hook
 
-          def before_hook(entity); @@actions_called[:before_hook] = true; end
-          def after_hook(entity); @@actions_called[:after_hook] = true; end
+          def before_hook(entity); self.actions_called[:before_hook] = true; end
+          def after_hook(entity); self.actions_called[:after_hook] = true; end
         end
       end
 
@@ -198,16 +198,16 @@ RSpec.describe Materialist::Materializer do
             let(:materializer_class) do
               FoobarMaterializer = Class.new do
                 include Materialist::Materializer
-                @@actions_called = {}
+                cattr_accessor(:actions_called) { {} }
 
                 persist_to :foobar
                 before_upsert :before_hook, :before_hook2
                 after_upsert :after_hook, :after_hook2
 
-                def before_hook(entity); @@actions_called[:before_hook] = true; end
-                def before_hook2(entity); @@actions_called[:before_hook2] = true; end
-                def after_hook(entity); @@actions_called[:after_hook] = true; end
-                def after_hook2(entity); @@actions_called[:after_hook2] = true; end
+                def before_hook(entity); self.actions_called[:before_hook] = true; end
+                def before_hook2(entity); self.actions_called[:before_hook2] = true; end
+                def after_hook(entity); self.actions_called[:after_hook] = true; end
+                def after_hook2(entity); self.actions_called[:after_hook2] = true; end
               end
             end
 
@@ -237,18 +237,17 @@ RSpec.describe Materialist::Materializer do
 
     context "when {before, after}_destroy is configured" do
       let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
-      let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
       let!(:materializer_class) do
         FoobarMaterializer = Class.new do
           include Materialist::Materializer
-          @@actions_called = {}
+          cattr_accessor(:actions_called) { {} }
 
           persist_to :foobar
           before_destroy :before_hook
           after_destroy :after_hook
 
-          def before_hook(entity); @@actions_called[:before_hook] = true; end
-          def after_hook(entity); @@actions_called[:after_hook] = true; end
+          def before_hook(entity); self.actions_called[:before_hook] = true; end
+          def after_hook(entity); self.actions_called[:after_hook] = true; end
         end
       end
 
@@ -280,16 +279,16 @@ RSpec.describe Materialist::Materializer do
           let(:materializer_class) do
             FoobarMaterializer = Class.new do
               include Materialist::Materializer
-              @@actions_called = {}
+              cattr_accessor(:actions_called) { {} }
 
               persist_to :foobar
               before_destroy :before_hook, :before_hook2
               after_destroy :after_hook, :after_hook2
 
-              def before_hook(entity); @@actions_called[:before_hook] = true; end
-              def before_hook2(entity); @@actions_called[:before_hook2] = true; end
-              def after_hook(entity); @@actions_called[:after_hook] = true; end
-              def after_hook2(entity); @@actions_called[:after_hook2] = true; end
+              def before_hook(entity); self.actions_called[:before_hook] = true; end
+              def before_hook2(entity); self.actions_called[:before_hook2] = true; end
+              def after_hook(entity); self.actions_called[:after_hook] = true; end
+              def after_hook2(entity); self.actions_called[:after_hook2] = true; end
             end
           end
 
