@@ -8,6 +8,10 @@ module Materialist
           materializer = Materializer.new(url, self)
           action == :delete ? materializer.destroy : materializer.upsert
         end
+
+        def _sidekiq_options
+          __materialist_options[:sidekiq_options] || {}
+        end
       end
     end
   end

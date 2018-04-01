@@ -26,6 +26,10 @@ module Materialist
           __materialist_options[:model_class] = klass
         end
 
+        def sidekiq_options(options)
+          __materialist_options[:sidekiq_options] = options
+        end
+
         def source_key(key, &url_parser_block)
           __materialist_options[:source_key] = key
           __materialist_options[:url_parser] = url_parser_block

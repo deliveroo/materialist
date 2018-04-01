@@ -5,7 +5,7 @@ require 'materialist/materializer'
 RSpec.describe Materialist::Materializer do
   uses_redis
 
-  describe "#perform" do
+  describe ".perform" do
     let!(:materializer_class) do
       FoobarMaterializer = Class.new do
         include Materialist::Materializer
@@ -393,6 +393,37 @@ RSpec.describe Materialist::Materializer do
           perform
           expect(DefinedSource.count).to eq 0
         end
+      end
+    end
+  end
+
+  describe "._sidekiq_options" do
+    subject { materializer_class._sidekiq_options }
+
+    context "when sidekiq options have been set" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          sidekiq_options  queue: :dedicated, option: 'value'
+        end
+      end
+
+
+      it "returns the options" do
+        is_expected.to eql(queue: :dedicated, option: 'value')
+      end
+    end
+
+    context "when sidekiq options have not been set" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+        end
+      end
+
+      it "returns empty hash" do
+        is_expected.to eql({})
       end
     end
   end

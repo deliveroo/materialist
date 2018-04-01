@@ -50,6 +50,27 @@ RSpec.describe Materialist::EventHandler do
   end
 
   describe "#call" do
+    subject { described_class.new.call }
+
+    let(:event) { { "topic" => topic } }
+    let(:topic) { :foobar }
+    let(:configuration) do
+      OpenStruct.new({
+        sidekiq_options: sidekiq_options
+      })
+    end
+    let(:sidekiq_options) { { "option_1" => "value" } }
+
+    before do
+      allow(Materialist).to receive(:configuration).and_return(configuration)
+      allow(Materialist::MaterializerFactory).to receive(:class_from_topic).with(topic).and_return(materializer_class)
+    end
+
+    context "when the materializer class specifies a queue"
+    context "when the materializer class does not specify a queue"
+  end
+
+  describe "#call" do
     let(:event) { { "topic" => :foobar } }
     let(:perform) { subject.call event }
 
