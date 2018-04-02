@@ -397,6 +397,50 @@ RSpec.describe Materialist::Materializer do
     end
   end
 
+  describe ".prune!" do
+    subject { materializer_class.prune! }
+
+    let!(:old_city) { City.create!(source_url: "url1", name: "Old", updated_at: 61.minutes.ago) }
+    let!(:current_city) { City.create!(source_url: "url2", name: "Current", updated_at: 10.minutes.ago) }
+
+    context "when pruning is defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+          prune after: 1.hour
+        end
+      end
+
+      it "deletes the old record from the database" do
+        subject
+
+        expect { old_city.reload }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it "keeps the other records in the database" do
+        subject
+
+        expect(current_city.reload).to eql(current_city)
+      end
+    end
+
+    context "when pruning is not defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+        end
+      end
+
+      it "raises an error" do
+        expect { subject }.to raise_error(Materialist::PruningNotEnabled)
+      end
+    end
+  end
+
   describe "._sidekiq_options" do
     subject { materializer_class._sidekiq_options }
 

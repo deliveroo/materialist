@@ -30,6 +30,10 @@ module Materialist
           __materialist_options[:sidekiq_options] = options
         end
 
+        def prune(after:)
+          __materialist_options[:prune] = { after: after }
+        end
+
         def source_key(key, &url_parser_block)
           __materialist_options[:source_key] = key
           __materialist_options[:url_parser] = url_parser_block

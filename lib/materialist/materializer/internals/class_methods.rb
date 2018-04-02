@@ -9,6 +9,10 @@ module Materialist
           action == :delete ? materializer.destroy : materializer.upsert
         end
 
+        def prune!
+          PruneRunner.new(self).run!
+        end
+
         def _sidekiq_options
           __materialist_options[:sidekiq_options] || {}
         end
