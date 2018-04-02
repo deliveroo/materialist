@@ -1,5 +1,5 @@
 require 'active_support/inflector'
-require_relative './event_worker'
+require_relative './workers/event'
 require_relative './materializer_factory'
 
 module Materialist
@@ -34,7 +34,7 @@ module Materialist
     end
 
     def worker(topic)
-      Materialist::EventWorker.set(sidekiq_options(topic))
+      Materialist::Workers::Event.set(sidekiq_options(topic))
     end
 
     def materializer_sidekiq_options(topic)

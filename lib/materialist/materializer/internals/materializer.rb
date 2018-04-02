@@ -1,5 +1,5 @@
 require 'routemaster/api_client'
-require_relative '../../event_worker'
+require_relative '../../workers/event'
 
 module Materialist
   module Materializer
@@ -68,7 +68,7 @@ module Materialist
           # this can't happen asynchronously
           # because the handler options are unavailable in this context
           # :(
-          ::Materialist::EventWorker.new.perform({
+          ::Materialist::Workers::Event.new.perform({
             'topic' => opts[:topic],
             'url' => root_resource.body._links[key].href,
             'type' => 'noop'

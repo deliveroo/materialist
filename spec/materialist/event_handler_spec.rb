@@ -1,6 +1,6 @@
 require 'spec_helper'
 require 'materialist/event_handler'
-require 'materialist/event_worker'
+require 'materialist/workers/event'
 
 RSpec.describe Materialist::EventHandler do
   let(:configuration) do
@@ -17,7 +17,7 @@ RSpec.describe Materialist::EventHandler do
   before do
     allow(Materialist).to receive(:configuration).and_return(configuration)
     allow(Materialist::MaterializerFactory).to receive(:class_from_topic).and_return(materializer_class)
-    allow(Materialist::EventWorker).to receive(:set).and_return(worker_double)
+    allow(Materialist::Workers::Event).to receive(:set).and_return(worker_double)
   end
 
   describe "#on_events_received" do
@@ -70,7 +70,7 @@ RSpec.describe Materialist::EventHandler do
     before do
       allow(Materialist).to receive(:configuration).and_return(configuration)
       allow(Materialist::MaterializerFactory).to receive(:class_from_topic).with(topic).and_return(materializer_class)
-      allow(Materialist::EventWorker).to receive(:set).with(expected_event_options).and_return(worker_class)
+      allow(Materialist::Workers::Event).to receive(:set).with(expected_event_options).and_return(worker_class)
     end
 
     it "enqueues the event worker with sidekiq options merged from configuration, default and the materializer" do
