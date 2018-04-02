@@ -13,6 +13,10 @@ module Materialist
           PruneRunner.new(self).run!
         end
 
+        def prune_enabled?
+          PruneRunner.new(self).enabled?
+        end
+
         def _sidekiq_options
           __materialist_options[:sidekiq_options] || {}
         end

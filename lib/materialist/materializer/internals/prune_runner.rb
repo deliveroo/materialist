@@ -10,6 +10,10 @@ module Materialist
           @options = klass.__materialist_options
         end
 
+        def enabled?
+          !!prune_after
+        end
+
         def run!
           raise PruningNotEnabled unless prune_after
 

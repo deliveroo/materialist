@@ -397,6 +397,36 @@ RSpec.describe Materialist::Materializer do
     end
   end
 
+  describe ".prune_enabled?" do
+    subject { materializer_class.prune_enabled? }
+
+    context "when pruning is defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+          prune after: 1.hour
+        end
+      end
+
+      it { is_expected.to be true }
+    end
+
+    context "when pruning is not defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+        end
+      end
+
+      it { is_expected.to be false }
+    end
+  end
+
+
   describe ".prune!" do
     subject { materializer_class.prune! }
 
