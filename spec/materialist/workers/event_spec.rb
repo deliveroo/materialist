@@ -1,7 +1,7 @@
 require 'spec_helper'
-require 'materialist/event_worker'
+require 'materialist/workers/event'
 
-RSpec.describe Materialist::EventWorker do
+RSpec.describe Materialist::Workers::Event do
   describe "#perform" do
     let(:source_url) { 'https://service.dev/foobars/1' }
     let(:event) {{ 'topic' => :foobar, 'url' => source_url, 'type' => 'noop' }}

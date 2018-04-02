@@ -5,7 +5,7 @@ require 'materialist/materializer'
 RSpec.describe Materialist::Materializer do
   uses_redis
 
-  describe "#perform" do
+  describe ".perform" do
     let!(:materializer_class) do
       FoobarMaterializer = Class.new do
         include Materialist::Materializer
@@ -71,6 +71,7 @@ RSpec.describe Materialist::Materializer do
 
     let(:action) { :create }
     let(:perform) { materializer_class.perform(source_url, action) }
+    let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
 
     it "materializes record in db" do
       expect{perform}.to change{Foobar.count}.by 1
@@ -168,18 +169,17 @@ RSpec.describe Materialist::Materializer do
 
     context "when {after, before}_upsert is configured" do
       let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
-      let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
       let!(:materializer_class) do
         FoobarMaterializer = Class.new do
           include Materialist::Materializer
-          @@actions_called = {}
+          cattr_accessor(:actions_called) { {} }
 
           persist_to :foobar
           before_upsert :before_hook
           after_upsert :after_hook
 
-          def before_hook(entity); @@actions_called[:before_hook] = true; end
-          def after_hook(entity); @@actions_called[:after_hook] = true; end
+          def before_hook(entity); self.actions_called[:before_hook] = true; end
+          def after_hook(entity); self.actions_called[:after_hook] = true; end
         end
       end
 
@@ -198,16 +198,16 @@ RSpec.describe Materialist::Materializer do
             let(:materializer_class) do
               FoobarMaterializer = Class.new do
                 include Materialist::Materializer
-                @@actions_called = {}
+                cattr_accessor(:actions_called) { {} }
 
                 persist_to :foobar
                 before_upsert :before_hook, :before_hook2
                 after_upsert :after_hook, :after_hook2
 
-                def before_hook(entity); @@actions_called[:before_hook] = true; end
-                def before_hook2(entity); @@actions_called[:before_hook2] = true; end
-                def after_hook(entity); @@actions_called[:after_hook] = true; end
-                def after_hook2(entity); @@actions_called[:after_hook2] = true; end
+                def before_hook(entity); self.actions_called[:before_hook] = true; end
+                def before_hook2(entity); self.actions_called[:before_hook2] = true; end
+                def after_hook(entity); self.actions_called[:after_hook] = true; end
+                def after_hook2(entity); self.actions_called[:after_hook2] = true; end
               end
             end
 
@@ -237,18 +237,17 @@ RSpec.describe Materialist::Materializer do
 
     context "when {before, after}_destroy is configured" do
       let!(:record) { Foobar.create!(source_url: source_url, name: 'mo') }
-      let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
       let!(:materializer_class) do
         FoobarMaterializer = Class.new do
           include Materialist::Materializer
-          @@actions_called = {}
+          cattr_accessor(:actions_called) { {} }
 
           persist_to :foobar
           before_destroy :before_hook
           after_destroy :after_hook
 
-          def before_hook(entity); @@actions_called[:before_hook] = true; end
-          def after_hook(entity); @@actions_called[:after_hook] = true; end
+          def before_hook(entity); self.actions_called[:before_hook] = true; end
+          def after_hook(entity); self.actions_called[:after_hook] = true; end
         end
       end
 
@@ -280,16 +279,16 @@ RSpec.describe Materialist::Materializer do
           let(:materializer_class) do
             FoobarMaterializer = Class.new do
               include Materialist::Materializer
-              @@actions_called = {}
+              cattr_accessor(:actions_called) { {} }
 
               persist_to :foobar
               before_destroy :before_hook, :before_hook2
               after_destroy :after_hook, :after_hook2
 
-              def before_hook(entity); @@actions_called[:before_hook] = true; end
-              def before_hook2(entity); @@actions_called[:before_hook2] = true; end
-              def after_hook(entity); @@actions_called[:after_hook] = true; end
-              def after_hook2(entity); @@actions_called[:after_hook2] = true; end
+              def before_hook(entity); self.actions_called[:before_hook] = true; end
+              def before_hook2(entity); self.actions_called[:before_hook2] = true; end
+              def after_hook(entity); self.actions_called[:after_hook] = true; end
+              def after_hook2(entity); self.actions_called[:after_hook2] = true; end
             end
           end
 
@@ -394,6 +393,111 @@ RSpec.describe Materialist::Materializer do
           perform
           expect(DefinedSource.count).to eq 0
         end
+      end
+    end
+  end
+
+  describe ".prune_enabled?" do
+    subject { materializer_class.prune_enabled? }
+
+    context "when pruning is defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+          prune after: 1.hour
+        end
+      end
+
+      it { is_expected.to be true }
+    end
+
+    context "when pruning is not defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+        end
+      end
+
+      it { is_expected.to be false }
+    end
+  end
+
+
+  describe ".prune!" do
+    subject { materializer_class.prune! }
+
+    let!(:old_city) { City.create!(source_url: "url1", name: "Old", updated_at: 61.minutes.ago) }
+    let!(:current_city) { City.create!(source_url: "url2", name: "Current", updated_at: 10.minutes.ago) }
+
+    context "when pruning is defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+          prune after: 1.hour
+        end
+      end
+
+      it "deletes the old record from the database" do
+        subject
+
+        expect { old_city.reload }.to raise_error(ActiveRecord::RecordNotFound)
+      end
+
+      it "keeps the other records in the database" do
+        subject
+
+        expect(current_city.reload).to eql(current_city)
+      end
+    end
+
+    context "when pruning is not defined in the materializer" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :city
+        end
+      end
+
+      it "raises an error" do
+        expect { subject }.to raise_error(Materialist::PruningNotEnabled)
+      end
+    end
+  end
+
+  describe "._sidekiq_options" do
+    subject { materializer_class._sidekiq_options }
+
+    context "when sidekiq options have been set" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+
+          sidekiq_options  queue: :dedicated, option: 'value'
+        end
+      end
+
+
+      it "returns the options" do
+        is_expected.to eql(queue: :dedicated, option: 'value')
+      end
+    end
+
+    context "when sidekiq options have not been set" do
+      let(:materializer_class) do
+        Class.new do
+          include Materialist::Materializer
+        end
+      end
+
+      it "returns empty hash" do
+        is_expected.to eql({})
       end
     end
   end
