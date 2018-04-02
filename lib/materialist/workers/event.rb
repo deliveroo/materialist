@@ -3,7 +3,7 @@ require_relative '../materializer_factory'
 
 module Materialist
   module Workers
-      class Event
+    class Event
       include Sidekiq::Worker
 
       def perform(event)
