@@ -118,7 +118,7 @@ map '/events' do
 end
 ```
 
-### DSL
+#### DSL
 
 Next you would need to define a materializer for each of the topic. The name of
 the materializer class should match the topic name (in singular)
@@ -130,6 +130,8 @@ require 'materialist/materializer'
 
 class ZoneMaterializer
   include Materialist::Materializer
+
+  sidekiq_options queue: :orderweb_service, retry: false
 
   persist_to :zone
 
@@ -156,11 +158,16 @@ end
 
 Here is what each part of the DSL mean:
 
+#### `sidekiq_options <options>`
+allows to override options for the Sidekiq job which does the materialization.
+Typically it will specify which queue to put the job on or how many times 
+should the job try to retry. These options override the options specified in 
+`Materialist.configuration.sidekiq_options`.
+
 #### `persist_to <model_name>`
 describes the name of the active record model to be used.
 If missing, materialist skips materialising the resource itself, but will continue
 with any other functionality -- such as `materialize_link`.
-
 
 #### `source_key <column> <url_parser_block> (default: url)`
 describes the column used to persist the unique identifier parsed from the url_parser_block.
