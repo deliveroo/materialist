@@ -1,3 +1,14 @@
+## 3.1.0
+
+Features:
+- Allow sidekiq options to be specified per materializer
+- Materialist::EventHandler will infer the correct materializer class from the incoming topic
+
+Notes:
+
+Materialist::EventWorker has been moved to Materialist::Workers::Event, but the original has 
+been left there for backwards compatibility. It will be removed in a later major release. 
+
 ## 3.0.0
 
 Breaking change:
