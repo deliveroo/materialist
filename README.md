@@ -180,10 +180,12 @@ describes mapping a resource key to a database column.
 #### `capture_link_href <key>, as: <column>`
 describes mapping a link href (as it appears on the hateous response) to a database column.
 
-#### `link <key>`
+#### `link <key>, enable_caching: <enable_caching> (default: false)`
 describes materializing from a relation of the resource. This can be nested to any depth as shown above.
 
 When inside the block of a `link` any other part of DSL can be used and will be evaluated in the context of the relation resource.
+
+`<enable_caching>` is optional and false by default. If `true` then Routemaster cache will be used when available for linked resources.
 
 ### `materialize_link <key>, topic: <topic> (default: key)`
 describes materializing the linked entity.
