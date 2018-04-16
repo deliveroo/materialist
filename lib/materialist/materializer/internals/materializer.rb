@@ -134,7 +134,7 @@ module Materialist
                 end
               when LinkMapping
                 resource.body._links.include?(m.key) ?
-                  result.merge(build_attributes(resource_at(resource.send(m.key).url), m.mapping || [])) :
+                  result.merge(build_attributes(linked_resource(resource, m), m.mapping || [])) :
                   result
               else
                 result
@@ -142,8 +142,12 @@ module Materialist
           end
         end
 
-        def resource_at(url)
-          api_client.get(url, options: { enable_caching: false })
+        def linked_resource(resource, mapping)
+          resource_at(resource.send(mapping.key).url, enable_caching: mapping.enable_caching)
+        end
+
+        def resource_at(url, enable_caching: false)
+          api_client.get(url, options: { enable_caching: enable_caching })
         rescue Routemaster::Errors::ResourceNotFound
           # this is due to a race condition between an upsert event
           # and a :delete event
