@@ -14,8 +14,8 @@ module Materialist
           __materialist_dsl_mapping_stack.last << LinkHrefMapping.new(key: key, as: as)
         end
 
-        def link(key)
-          link_mapping = LinkMapping.new(key: key)
+        def link(key, enable_caching: false)
+          link_mapping = LinkMapping.new(key: key, enable_caching: enable_caching)
           __materialist_dsl_mapping_stack.last << link_mapping
           __materialist_dsl_mapping_stack << link_mapping.mapping
           yield

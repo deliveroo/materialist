@@ -1,9 +1,8 @@
 language: ruby
-cache: bundler
 services:
   - redis-server
 rvm:
-  - 2.4.0
-  - 2.5.0
+  - 2.4.4
+  - 2.5.1
 script:
   - bundle exec rspec

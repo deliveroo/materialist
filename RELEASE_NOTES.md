@@ -1,3 +1,9 @@
+## 3.2.0
+
+Features:
+- For linked resources specified by `link` an option to `enable_caching` can now be explicitly set. This
+tells Routemaster to use or not use the drain cache. 
+
 ## 3.1.0
 
 Features:

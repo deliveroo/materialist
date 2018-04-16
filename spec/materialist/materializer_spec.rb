@@ -22,7 +22,7 @@ RSpec.describe Materialist::Materializer do
         link :city do
           capture :timezone
 
-          link :country do
+          link :country, enable_caching: true do
             capture :tld, as: :country_tld
           end
         end
