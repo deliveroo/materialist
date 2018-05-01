@@ -15,6 +15,9 @@ RSpec.describe Materialist::Materializer do
         capture :name
         capture :age, as: :how_old
         capture_link_href :city, as: :city_url
+        capture_link_href :city, as: :city_id do |url|
+          url.split('/').last.to_i
+        end
         capture_link_href :account, as: :account_url
 
         materialize_link :city
@@ -81,6 +84,8 @@ RSpec.describe Materialist::Materializer do
       expect(inserted.timezone).to eq city_body[:timezone]
       expect(inserted.country_tld).to eq country_body[:tld]
       expect(inserted.account_url).to be_nil
+      expect(inserted.city_url).to eq city_url
+      expect(inserted.city_id).to eq 1
     end
 
     it "materializes linked record separately in db" do

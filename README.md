@@ -160,8 +160,8 @@ Here is what each part of the DSL mean:
 
 #### `sidekiq_options <options>`
 allows to override options for the Sidekiq job which does the materialization.
-Typically it will specify which queue to put the job on or how many times 
-should the job try to retry. These options override the options specified in 
+Typically it will specify which queue to put the job on or how many times
+should the job try to retry. These options override the options specified in
 `Materialist.configuration.sidekiq_options`.
 
 #### `persist_to <model_name>`
@@ -179,6 +179,14 @@ describes mapping a resource key to a database column.
 
 #### `capture_link_href <key>, as: <column>`
 describes mapping a link href (as it appears on the hateous response) to a database column.
+
+You can optionally provide a block for parsing the url:
+
+```ruby
+capture_link_href :rider, as: :rider_id do |url|
+  url.split('/').last
+end
+```
 
 #### `link <key>, enable_caching: <enable_caching> (default: false)`
 describes materializing from a relation of the resource. This can be nested to any depth as shown above.

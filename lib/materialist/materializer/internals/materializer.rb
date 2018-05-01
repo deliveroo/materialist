@@ -129,7 +129,7 @@ module Materialist
               when LinkHrefMapping
                 result.tap do |r|
                   if resource.body._links.include?(m.key)
-                    r[m.as] = resource.body._links[m.key].href
+                    r[m.as] = m.url_parser.call(resource.body._links[m.key].href)
                   end
                 end
               when LinkMapping

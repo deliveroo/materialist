@@ -9,6 +9,7 @@ ActiveRecord::Schema.define do
     t.string :timezone
     t.string :country_tld
     t.string :city_url
+    t.integer :city_id
     t.string :account_url
 
     t.timestamps

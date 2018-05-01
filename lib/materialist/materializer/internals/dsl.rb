@@ -10,8 +10,12 @@ module Materialist
           __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
         end
 
-        def capture_link_href(key, as:)
-          __materialist_dsl_mapping_stack.last << LinkHrefMapping.new(key: key, as: as)
+        def capture_link_href(key, as:, &url_parser_block)
+          __materialist_dsl_mapping_stack.last << LinkHrefMapping.new(
+            key: key,
+            as: as,
+            url_parser: url_parser_block
+          )
         end
 
         def link(key, enable_caching: false)
