@@ -181,6 +181,14 @@ describes mapping a resource key to a database column.
 #### `capture_link_href <key>, as: <column>`
 describes mapping a link href (as it appears on the hateous response) to a database column.
 
+You can optionally provide a block for parsing the url:
+
+```ruby
+capture_link_href :rider, as: :rider_id do |url|
+  url.split('/').last
+end
+```
+
 #### `link <key>, enable_caching: <enable_caching> (default: false)`
 describes materializing from a relation of the resource. This can be nested to any depth as shown above.
 

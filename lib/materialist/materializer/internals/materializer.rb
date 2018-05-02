@@ -75,7 +75,7 @@ module Materialist
           })
         end
 
-        def mapping
+        def mappings
           options.fetch :mapping
         end
 
@@ -112,47 +112,15 @@ module Materialist
         end
 
         def attributes
-          build_attributes root_resource, mapping
+          mappings.map{ |m| m.map(root_resource) }.compact.reduce(&:merge) || {}
         end
 
         def root_resource
-          @_root_resource ||= resource_at(url)
-        end
-
-        def build_attributes(resource, mapping)
-          return {} unless resource
-
-          mapping.inject({}) do |result, m|
-            case m
-              when FieldMapping
-                result.tap { |r| r[m.as] = resource.body[m.key] }
-              when LinkHrefMapping
-                result.tap do |r|
-                  if resource.body._links.include?(m.key)
-                    r[m.as] = resource.body._links[m.key].href
-                  end
-                end
-              when LinkMapping
-                resource.body._links.include?(m.key) ?
-                  result.merge(build_attributes(linked_resource(resource, m), m.mapping || [])) :
-                  result
-              else
-                result
-            end
+          @_root_resource ||= begin
+            api_client.get(url, options: { enable_caching: false })
+          rescue Routemaster::Errors::ResourceNotFound
+            nil
           end
-        end
-
-        def linked_resource(resource, mapping)
-          resource_at(resource.send(mapping.key).url, enable_caching: mapping.enable_caching)
-        end
-
-        def resource_at(url, enable_caching: false)
-          api_client.get(url, options: { enable_caching: enable_caching })
-        rescue Routemaster::Errors::ResourceNotFound
-          # this is due to a race condition between an upsert event
-          # and a :delete event
-          # when this happens we should silently ignore the case
-          nil
         end
 
         def api_client
