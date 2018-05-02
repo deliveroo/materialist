@@ -1,8 +1,13 @@
+## next
+
+Features:
+- Add support for providing `notice_error` on configuration.
+
 ## 3.2.0
 
 Features:
 - For linked resources specified by `link` an option to `enable_caching` can now be explicitly set. This
-tells Routemaster to use or not use the drain cache. 
+tells Routemaster to use or not use the drain cache.
 
 ## 3.1.0
 
@@ -12,8 +17,8 @@ Features:
 
 Notes:
 
-Materialist::EventWorker has been moved to Materialist::Workers::Event, but the original has 
-been left there for backwards compatibility. It will be removed in a later major release. 
+Materialist::EventWorker has been moved to Materialist::Workers::Event, but the original has
+been left there for backwards compatibility. It will be removed in a later major release.
 
 ## 3.0.0
 

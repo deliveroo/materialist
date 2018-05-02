@@ -75,8 +75,9 @@ end
 
 - `topics` (only when using in `.subscribe`): A string array of topics to be used.  
 If not provided nothing would be materialized.
-- `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of optiosn
+- `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of options
 - `metrics_client` (optional) -- You can pass your `STATSD` instance
+- `notice_error` (optional) -- You can pass a lambda accepting two parameters (`exception` and `event`) -- Typical use case is to enrich error and send to NewRelic APM
 
 ### Routemaster Configuration
 
@@ -160,8 +161,8 @@ Here is what each part of the DSL mean:
 
 #### `sidekiq_options <options>`
 allows to override options for the Sidekiq job which does the materialization.
-Typically it will specify which queue to put the job on or how many times 
-should the job try to retry. These options override the options specified in 
+Typically it will specify which queue to put the job on or how many times
+should the job try to retry. These options override the options specified in
 `Materialist.configuration.sidekiq_options`.
 
 #### `persist_to <model_name>`

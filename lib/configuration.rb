@@ -14,12 +14,13 @@ module Materialist
   end
 
   class Configuration
-    attr_accessor :topics, :sidekiq_options, :metrics_client
+    attr_accessor :topics, :sidekiq_options, :metrics_client, :notice_error
 
     def initialize
       @topics = []
       @sidekiq_options = {}
       @metrics_client = NullMetricsClient
+      @notice_error = nil
     end
 
     class NullMetricsClient
