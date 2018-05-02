@@ -8,7 +8,12 @@ module Materialist
           @url_parser = url_parser
         end
 
-        attr_reader :key, :as
+        def map(resource)
+          return unless link = resource.body._links[@key]
+          { @as => url_parser.call(link.href) }
+        end
+
+        private
 
         def url_parser
           @url_parser || ->url { url }
