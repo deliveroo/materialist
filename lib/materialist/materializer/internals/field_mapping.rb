@@ -7,7 +7,9 @@ module Materialist
           @as = as
         end
 
-        attr_reader :key, :as
+        def map(resource)
+          { @as => resource.body[@key] }
+        end
       end
     end
   end
