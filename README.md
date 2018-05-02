@@ -75,8 +75,9 @@ end
 
 - `topics` (only when using in `.subscribe`): A string array of topics to be used.  
 If not provided nothing would be materialized.
-- `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of optiosn
+- `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of options
 - `metrics_client` (optional) -- You can pass your `STATSD` instance
+- `notice_error` (optional) -- You can pass a lambda accepting two parameters (`exception` and `event`) -- Typical use case is to enrich error and send to NewRelic APM
 
 ### Routemaster Configuration
 

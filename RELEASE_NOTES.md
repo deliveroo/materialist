@@ -6,6 +6,7 @@ _description of next release_
 
 Features:
 - Add support for parsing url when using `capture_link_href`
+- Add support for providing `notice_error` on configuration.
 
 ## 3.2.0
 

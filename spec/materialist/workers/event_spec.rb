@@ -48,6 +48,20 @@ RSpec.describe Materialist::Workers::Event do
         )
         expect{ perform }.to raise_error error
       end
+
+      context 'when there is notice_error configured' do
+        let(:configuration) { Materialist::Configuration.new.tap{ |c| c.notice_error = func } }
+        let(:func) { double }
+
+        before do
+          allow(Materialist).to receive(:configuration).and_return configuration
+        end
+
+        it 'calls the configured notice_error func' do
+          expect(func).to receive(:call).with(error, event)
+          expect{ perform }.to raise_error error
+        end
+      end
     end
 
     context 'when event has a timestamp' do

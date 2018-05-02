@@ -16,8 +16,9 @@ module Materialist
 
         report_latency(topic, timestamp) if timestamp
         report_stats(topic, action, :success)
-      rescue
+      rescue Exception => exception
         report_stats(topic, action, :failure)
+        notice_error(exception, event)
         raise
       end
 
@@ -37,6 +38,11 @@ module Materialist
           "materialist.event_worker.#{kind}",
           tags: ["action:#{action}", "topic:#{topic}"]
         )
+      end
+
+      def notice_error(exception, event)
+        return unless handler = Materialist.configuration.notice_error
+        handler.call(exception, event)
       end
     end
   end
