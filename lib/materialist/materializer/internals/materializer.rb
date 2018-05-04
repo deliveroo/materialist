@@ -1,14 +1,20 @@
 require 'routemaster/api_client'
 require_relative '../../workers/event'
+require_relative './resources'
 
 module Materialist
   module Materializer
     module Internals
       class Materializer
-        def initialize(url, klass)
+        def initialize(url, klass, resource_payload: nil)
           @url = url
           @instance = klass.new
           @options = klass.__materialist_options
+          @resource_payload = resource_payload
+        end
+
+        def perform(action)
+          action.to_sym == :delete ? destroy : upsert
         end
 
         def upsert(retry_on_race_condition: true)
@@ -53,7 +59,7 @@ module Materialist
         def upsert_record
           model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
-            entity.update_attributes! attributes
+            entity.update_attributes!(attributes)
           end
         end
 
@@ -63,16 +69,11 @@ module Materialist
         end
 
         def materialize_link(key, opts)
-          return unless root_resource.body._links.include?(key)
+          return unless link = root_resource.dig(:_links, key)
+          return unless materializer_class = Materialist::MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
-          # this can't happen asynchronously
-          # because the handler options are unavailable in this context
-          # :(
-          ::Materialist::Workers::Event.new.perform({
-            'topic' => opts[:topic],
-            'url' => root_resource.body._links[key].href,
-            'type' => 'noop'
-          })
+          # TODO: perhaps consider doing this asynchronously some how?
+          materializer_class.perform(link.href, :noop)
         end
 
         def mappings
@@ -117,7 +118,9 @@ module Materialist
 
         def root_resource
           @_root_resource ||= begin
-            api_client.get(url, options: { enable_caching: false })
+            @resource_payload ?
+              PayloadResource(@resource_payload, client: api_client) :
+              api_client.get(url, options: { enable_caching: false })
           rescue Routemaster::Errors::ResourceNotFound
             nil
           end
@@ -125,7 +128,7 @@ module Materialist
 
         def api_client
           @_api_client ||= Routemaster::APIClient.new(
-            response_class: Routemaster::Responses::HateoasResponse
+            response_class: HateoasResource
           )
         end
 

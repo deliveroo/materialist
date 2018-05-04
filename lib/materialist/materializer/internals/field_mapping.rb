@@ -8,7 +8,7 @@ module Materialist
         end
 
         def map(resource)
-          { @as => resource.body[@key] }
+          { @as => resource[@key] }
         end
       end
     end

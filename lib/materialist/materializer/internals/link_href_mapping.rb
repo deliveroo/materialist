@@ -9,7 +9,7 @@ module Materialist
         end
 
         def map(resource)
-          return unless link = resource.body._links[@key]
+          return unless link = resource.dig(:_links, @key)
           { @as => url_parser.call(link.href) }
         end
 
