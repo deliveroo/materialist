@@ -6,11 +6,14 @@ module Materialist
   module Materializer
     module Internals
       class Materializer
-        def initialize(url, klass, resource_payload: nil)
+        def initialize(url, klass, resource_payload: nil, api_client: nil)
           @url = url
           @instance = klass.new
           @options = klass.__materialist_options
-          @resource_payload = resource_payload
+          @api_client = api_client || Routemaster::APIClient.new(response_class: HateoasResource)
+          @resource_payload = resource_payload ?
+            PayloadResource.new(resource_payload, client: api_client) :
+            nil
         end
 
         def perform(action)
@@ -20,7 +23,7 @@ module Materialist
         private
 
         def upsert(retry_on_race_condition: true)
-          return unless root_resource
+          return unless resource
 
           if materialize_self?
             upsert_record.tap do |entity|
@@ -50,7 +53,7 @@ module Materialist
           end
         end
 
-        attr_reader :url, :instance, :options
+        attr_reader :url, :instance, :options, :api_client
 
         def materialize_self?
           options.include? :model_class
@@ -69,7 +72,7 @@ module Materialist
         end
 
         def materialize_link(key, opts)
-          return unless link = root_resource.dig(:_links, key)
+          return unless link = resource.dig(:_links, key)
           return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
           # TODO: perhaps consider doing this asynchronously some how?
@@ -113,23 +116,17 @@ module Materialist
         end
 
         def attributes
-          mappings.map{ |m| m.map(root_resource) }.compact.reduce(&:merge) || {}
+          mappings.map{ |m| m.map(resource) }.compact.reduce(&:merge) || {}
         end
 
-        def root_resource
-          @_root_resource ||= begin
-            @resource_payload ?
-              PayloadResource.new(@resource_payload, client: api_client) :
-              api_client.get(url, options: { enable_caching: false })
-          rescue Routemaster::Errors::ResourceNotFound
-            nil
-          end
+        def resource
+          @_resource ||= @payload_resource || fetch_resource
         end
 
-        def api_client
-          @_api_client ||= Routemaster::APIClient.new(
-            response_class: HateoasResource
-          )
+        def fetch_resource
+          api_client.get(url, options: { enable_caching: false })
+        rescue Routemaster::Errors::ResourceNotFound
+          nil
         end
 
         def send_messages(messages, arguments)
