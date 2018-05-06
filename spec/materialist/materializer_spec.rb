@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'support/uses_redis'
 require 'materialist/materializer'
 
-RSpec.describe Materialist::Materializer do
+RSpec.describe Materialist::Materializer::Internals::Materializer do
   uses_redis
 
   describe ".perform" do
@@ -77,7 +77,7 @@ RSpec.describe Materialist::Materializer do
     let(:actions_called) { materializer_class.class_variable_get(:@@actions_called) }
 
     it "materializes record in db" do
-      expect{perform}.to change{Foobar.count}.by 1
+      expect{ perform }.to change{ Foobar.count }.by 1
       inserted = Foobar.find_by(source_url: source_url)
       expect(inserted.name).to eq source_body[:name]
       expect(inserted.how_old).to eq source_body[:age]
@@ -93,6 +93,18 @@ RSpec.describe Materialist::Materializer do
 
       inserted = City.find_by(source_url: city_url)
       expect(inserted.name).to eq city_body[:name]
+    end
+
+    context 'when materializing using payload' do
+      let(:perform) { materializer_class.perform(source_url, action, resource_payload: source_body) }
+
+      it "materializes record in db" do
+        expect{ perform }.to change{ Foobar.count }.by 1
+      end
+
+      it "materializes linked record in db" do
+        expect{ perform }.to change{ City.count }.by 1
+      end
     end
 
     context "when record already exists" do

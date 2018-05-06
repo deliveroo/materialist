@@ -73,7 +73,7 @@ module Materialist
           return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
           # TODO: perhaps consider doing this asynchronously some how?
-          materializer_class.perform(link.href, :noop)
+          materializer_class.perform(link[:href], :noop)
         end
 
         def mappings
@@ -119,7 +119,7 @@ module Materialist
         def root_resource
           @_root_resource ||= begin
             @resource_payload ?
-              PayloadResource(@resource_payload, client: api_client) :
+              PayloadResource.new(@resource_payload, client: api_client) :
               api_client.get(url, options: { enable_caching: false })
           rescue Routemaster::Errors::ResourceNotFound
             nil

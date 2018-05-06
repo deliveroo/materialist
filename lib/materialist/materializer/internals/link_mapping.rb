@@ -17,7 +17,7 @@ module Materialist
 
         def linked_resource(resource)
           return unless link = resource.dig(:_links, @key)
-          resource.client.get(link.href, options: { enable_caching: @enable_caching })
+          resource.client.get(link[:href], options: { enable_caching: @enable_caching })
         rescue Routemaster::Errors::ResourceNotFound
           nil
         end
