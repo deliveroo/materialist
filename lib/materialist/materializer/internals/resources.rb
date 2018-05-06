@@ -4,7 +4,7 @@ module Materialist
       class PayloadResource
         attr_reader :client
 
-        delegate :[], :dig, to: :@payload
+        delegate :dig, to: :@payload
 
         def initialize(payload, client:)
           @payload = payload

@@ -8,7 +8,7 @@ module Materialist
         end
 
         def map(resource)
-          { @as => resource[@key] }
+          { @as => resource.dig(@key) }
         end
       end
     end

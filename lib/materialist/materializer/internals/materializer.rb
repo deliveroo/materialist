@@ -17,6 +17,8 @@ module Materialist
           action.to_sym == :delete ? destroy : upsert
         end
 
+        private
+
         def upsert(retry_on_race_condition: true)
           return unless root_resource
 
@@ -48,8 +50,6 @@ module Materialist
           end
         end
 
-        private
-
         attr_reader :url, :instance, :options
 
         def materialize_self?
@@ -70,7 +70,7 @@ module Materialist
 
         def materialize_link(key, opts)
           return unless link = root_resource.dig(:_links, key)
-          return unless materializer_class = Materialist::MaterializerFactory.class_from_topic(opts.fetch(:topic))
+          return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
           # TODO: perhaps consider doing this asynchronously some how?
           materializer_class.perform(link.href, :noop)
