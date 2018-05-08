@@ -14,6 +14,9 @@ In your `gemfile`
 
 ```ruby
 gem 'materialist'
+
+# or for sandbox features
+gem 'materialist', github: 'deliveroo/materialist', branch: 'sandbox'
 ```
 
 Then do
