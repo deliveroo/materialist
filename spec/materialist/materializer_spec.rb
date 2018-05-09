@@ -60,8 +60,9 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
       )
     end
 
+    let!(:source_stub) { stub_resource source_url, source_body }
+
     before do
-      stub_resource source_url, source_body
       stub_resource country_url, country_body
       stub_resource city_url, city_body
       stub_resource defined_source_url, defined_source_body
@@ -97,6 +98,11 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
 
     context 'when materializing using payload' do
       let(:perform) { materializer_class.perform(source_url, action, resource_payload: source_body) }
+
+      it 'does not fetch resource' do
+        perform
+        expect(source_stub).to_not have_been_requested
+      end
 
       it "materializes record in db" do
         expect{ perform }.to change{ Foobar.count }.by 1

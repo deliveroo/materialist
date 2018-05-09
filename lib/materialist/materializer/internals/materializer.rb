@@ -11,9 +11,9 @@ module Materialist
           @instance = klass.new
           @options = klass.__materialist_options
           @api_client = api_client || Routemaster::APIClient.new(response_class: HateoasResource)
-          @resource_payload = resource_payload ?
-            PayloadResource.new(resource_payload, client: api_client) :
-            nil
+          if resource_payload
+            @resource = PayloadResource.new(resource_payload, client: @api_client)
+          end
         end
 
         def perform(action)
@@ -120,7 +120,7 @@ module Materialist
         end
 
         def resource
-          @_resource ||= @payload_resource || fetch_resource
+          @resource ||= fetch_resource
         end
 
         def fetch_resource
