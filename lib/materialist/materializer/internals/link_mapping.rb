@@ -2,10 +2,10 @@ module Materialist
   module Materializer
     module Internals
       class LinkMapping
-        def initialize(key:, enable_caching: false)
+        def initialize(key:, mapping: [], enable_caching: false)
           @key = key
+          @mapping = mapping
           @enable_caching = enable_caching
-          @mapping = []
         end
 
         attr_reader :mapping
@@ -16,8 +16,8 @@ module Materialist
         end
 
         def linked_resource(resource)
-          return unless link = resource.dig(:_links, @key)
-          resource.client.get(link[:href], options: { enable_caching: @enable_caching })
+          return unless href = resource.dig(:_links, @key, :href)
+          resource.client.get(href, options: { enable_caching: @enable_caching })
         rescue Routemaster::Errors::ResourceNotFound
           nil
         end
