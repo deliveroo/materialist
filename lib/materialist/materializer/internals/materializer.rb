@@ -1,18 +1,29 @@
 require 'routemaster/api_client'
 require_relative '../../workers/event'
+require_relative './resources'
 
 module Materialist
   module Materializer
     module Internals
       class Materializer
-        def initialize(url, klass)
+        def initialize(url, klass, resource_payload: nil, api_client: nil)
           @url = url
           @instance = klass.new
           @options = klass.__materialist_options
+          @api_client = api_client || Routemaster::APIClient.new(response_class: HateoasResource)
+          if resource_payload
+            @resource = PayloadResource.new(resource_payload, client: @api_client)
+          end
         end
 
+        def perform(action)
+          action.to_sym == :delete ? destroy : upsert
+        end
+
+        private
+
         def upsert(retry_on_race_condition: true)
-          return unless root_resource
+          return unless resource
 
           if materialize_self?
             upsert_record.tap do |entity|
@@ -42,9 +53,7 @@ module Materialist
           end
         end
 
-        private
-
-        attr_reader :url, :instance, :options
+        attr_reader :url, :instance, :options, :api_client
 
         def materialize_self?
           options.include? :model_class
@@ -53,7 +62,7 @@ module Materialist
         def upsert_record
           model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
-            entity.update_attributes! attributes
+            entity.update_attributes!(attributes)
           end
         end
 
@@ -63,16 +72,11 @@ module Materialist
         end
 
         def materialize_link(key, opts)
-          return unless root_resource.body._links.include?(key)
+          return unless link = resource.dig(:_links, key)
+          return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
-          # this can't happen asynchronously
-          # because the handler options are unavailable in this context
-          # :(
-          ::Materialist::Workers::Event.new.perform({
-            'topic' => opts[:topic],
-            'url' => root_resource.body._links[key].href,
-            'type' => 'noop'
-          })
+          # TODO: perhaps consider doing this asynchronously some how?
+          materializer_class.perform(link[:href], :noop)
         end
 
         def mappings
@@ -112,21 +116,17 @@ module Materialist
         end
 
         def attributes
-          mappings.map{ |m| m.map(root_resource) }.compact.reduce(&:merge) || {}
+          mappings.map{ |m| m.map(resource) }.compact.reduce(&:merge) || {}
         end
 
-        def root_resource
-          @_root_resource ||= begin
-            api_client.get(url, options: { enable_caching: false })
-          rescue Routemaster::Errors::ResourceNotFound
-            nil
-          end
+        def resource
+          @resource ||= fetch_resource
         end
 
-        def api_client
-          @_api_client ||= Routemaster::APIClient.new(
-            response_class: Routemaster::Responses::HateoasResponse
-          )
+        def fetch_resource
+          api_client.get(url, options: { enable_caching: false })
+        rescue Routemaster::Errors::ResourceNotFound
+          nil
         end
 
         def send_messages(messages, arguments)

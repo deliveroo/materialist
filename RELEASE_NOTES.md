@@ -2,6 +2,11 @@
 
 _description of next release_
 
+## 3.4.0
+
+- Add support for providing payload into the materializer
+- Enhance linked resource materialization to avoid `:noop` stats
+
 ## 3.3.0
 
 Features:

@@ -2,13 +2,13 @@ module Materialist
   module Materializer
     module Internals
       class FieldMapping
-        def initialize(key:, as:)
+        def initialize(key:, as: key)
           @key = key
           @as = as
         end
 
         def map(resource)
-          { @as => resource.body[@key] }
+          { @as => resource.dig(@key) }
         end
       end
     end
