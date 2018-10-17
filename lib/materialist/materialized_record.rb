@@ -1,4 +1,3 @@
-require 'routemaster/api_client'
 require_relative './errors'
 
 module Materialist
@@ -35,9 +34,7 @@ module Materialist
     private
 
     def source_raw
-      Routemaster::APIClient.new(
-        response_class: Routemaster::Responses::HateoasResponse
-      ).get(source_url)
+      Materialist.configuration.api_client.get(source_url)
     end
   end
 end

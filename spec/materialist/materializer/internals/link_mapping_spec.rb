@@ -76,7 +76,7 @@ RSpec.describe Materialist::Materializer::Internals::LinkMapping, type: :interna
 
         it 'passes on the option to client' do
           expect(client).to receive(:get)
-            .with(url_sub, options: { enable_caching: true})
+            .with(url_sub, options: { enable_caching: true, response_class: HateoasResource})
           perform
         end
       end

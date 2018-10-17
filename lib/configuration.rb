@@ -1,3 +1,5 @@
+require 'routemaster/api_client'
+
 module Materialist
   class << self
     def configuration
@@ -14,11 +16,12 @@ module Materialist
   end
 
   class Configuration
-    attr_accessor :topics, :sidekiq_options, :metrics_client, :notice_error
+    attr_accessor :topics, :sidekiq_options, :api_client, :metrics_client, :notice_error
 
     def initialize
       @topics = []
       @sidekiq_options = {}
+      @api_client = Routemaster::APIClient.new(response_class: ::Routemaster::Responses::HateoasResponse)
       @metrics_client = NullMetricsClient
       @notice_error = nil
     end
