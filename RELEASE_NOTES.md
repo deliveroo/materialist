@@ -2,6 +2,10 @@
 
 _description of next release_
 
+## 3.5.0
+
+- Add support for providing an `Routemaster::APIClient` instance as part of configuration
+
 ## 3.4.0
 
 - Add support for providing payload into the materializer

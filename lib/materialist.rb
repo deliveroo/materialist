@@ -1,5 +1,5 @@
 require_relative './configuration'
+require_relative './materialist/version'
 
 module Materialist
-  VERSION = '3.4.0'
 end

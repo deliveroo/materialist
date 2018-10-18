@@ -1,4 +1,3 @@
-require 'routemaster/api_client'
 require_relative '../../workers/event'
 require_relative './resources'
 
@@ -10,7 +9,7 @@ module Materialist
           @url = url
           @instance = klass.new
           @options = klass.__materialist_options
-          @api_client = api_client || Routemaster::APIClient.new(response_class: HateoasResource)
+          @api_client = api_client || Materialist.configuration.api_client
           if resource_payload
             @resource = PayloadResource.new(resource_payload, client: @api_client)
           end
@@ -124,7 +123,7 @@ module Materialist
         end
 
         def fetch_resource
-          api_client.get(url, options: { enable_caching: false })
+          api_client.get(url, options: { enable_caching: false, response_class: HateoasResource })
         rescue Routemaster::Errors::ResourceNotFound
           nil
         end
