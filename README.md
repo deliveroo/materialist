@@ -31,7 +31,7 @@ After merging all of your PRs:
 
 1. Bump the version in `lib/materialist/version.rb` -- let's say `x.y.z`
 1. Build the gem: `gem build materialist.gemspec`
-2. Push the gem: `gem push materialist-x.y.z.gem`
+1. Push the gem: `gem push materialist-x.y.z.gem`
 1. Commit changes: `git commit -am "Bump version"`
 1. Create a tag: `git tag -a vx.y.z`
 1. Push changes: `git push origin master`
