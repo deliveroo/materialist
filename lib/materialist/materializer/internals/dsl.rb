@@ -6,7 +6,7 @@ module Materialist
           __materialist_options[:links_to_materialize][key] = { topic: topic }
         end
 
-        def capture(key, as: key)
+        def capture(key, as: [key].flatten.last)
           __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
         end
 

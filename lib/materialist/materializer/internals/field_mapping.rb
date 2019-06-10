@@ -8,7 +8,7 @@ module Materialist
         end
 
         def map(resource)
-          { @as => resource.dig(@key) }
+          { @as => resource.dig(*[@key].flatten) }
         end
       end
     end
