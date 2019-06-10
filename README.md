@@ -91,7 +91,7 @@ Materialist.configure do |config|
 end
 ```
 
-- `topics` (only when using in `.subscribe`): A string array of topics to be used.  
+- `topics` (only when using in `.subscribe`): A string array of topics to be used.
 If not provided nothing would be materialized.
 - `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of options
 - `api_client` (optional) -- You can pass your `Routemaster::APIClient` instance
@@ -162,6 +162,7 @@ class ZoneMaterializer
   capture :id, as: :orderweb_id
   capture :code
   capture :name
+  capture %i[location, latitude], as: :current_latitude
 
   link :city do
     capture :tz_name, as: :timezone
@@ -194,8 +195,10 @@ describes the column used to persist the unique identifier parsed from the url_p
 By default the column used is `:source_url` and the original `url` is used as the identifier.
 Passing an optional block allows you to extract an identifier from the URL.
 
-#### `capture <key>, as: <column> (default: key)`
-describes mapping a resource key to a database column.
+#### `capture <key> || [<keys>], as: <column> (default: key || keys.last)`
+describes mapping a resource key to a database column. An array of keys can be provided to extract
+a nested value. The default column name is the key name or the last key name when an array is
+provided.
 
 #### `capture_link_href <key>, as: <column>`
 describes mapping a link href (as it appears on the hateous response) to a database column.

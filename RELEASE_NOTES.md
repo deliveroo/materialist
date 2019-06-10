@@ -2,6 +2,10 @@
 
 _description of next release_
 
+## 3.6.0
+
+- Add support for passing array of key values to DSL `capture` method for nested value extraction.
+
 ## 3.5.0
 
 - Add support for providing an `Routemaster::APIClient` instance as part of configuration
