@@ -91,7 +91,7 @@ Materialist.configure do |config|
 end
 ```
 
-- `topics` (only when using in `.subscribe`): A string array of topics to be used.  
+- `topics` (only when using in `.subscribe`): A string array of topics to be used.
 If not provided nothing would be materialized.
 - `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of options
 - `api_client` (optional) -- You can pass your `Routemaster::APIClient` instance
@@ -196,6 +196,12 @@ Passing an optional block allows you to extract an identifier from the URL.
 
 #### `capture <key>, as: <column> (default: key)`
 describes mapping a resource key to a database column.
+
+You can optionally provide a block for parsing the value:
+
+```ruby
+capture(:location, as: :latitude) { |location| location[:latitude] }
+```
 
 #### `capture_link_href <key>, as: <column>`
 describes mapping a link href (as it appears on the hateous response) to a database column.
