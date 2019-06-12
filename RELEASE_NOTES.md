@@ -1,6 +1,10 @@
 ## Next
 
-_description of next release_
+_list pending release notes here..._
+
+## 3.6.0
+
+- Add support for parsing value when using `capture`
 
 ## 3.5.0
 
