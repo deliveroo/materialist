@@ -6,8 +6,12 @@ module Materialist
           __materialist_options[:links_to_materialize][key] = { topic: topic }
         end
 
-        def capture(key, as: key)
-          __materialist_dsl_mapping_stack.last << FieldMapping.new(key: key, as: as)
+        def capture(key, as: key, &value_parser_block)
+          __materialist_dsl_mapping_stack.last << FieldMapping.new(
+            key: key,
+            as: as,
+            value_parser: value_parser_block
+          )
         end
 
         def capture_link_href(key, as:, &url_parser_block)
