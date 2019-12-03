@@ -199,7 +199,12 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
 
           persist_to :foobar
           before_upsert :before_hook
+          before_upsert_with_payload :before_hook_with_payload
           after_upsert :after_hook
+
+          def before_hook_with_payload(entity, payload)
+            self.actions_called[:before_hook_with_payload] = true
+          end
 
           def before_hook(entity); self.actions_called[:before_hook] = true; end
           def after_hook(entity); self.actions_called[:after_hook] = true; end
@@ -209,6 +214,11 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
       %i(create update noop).each do |action_name|
         context "when action is :#{action_name}" do
           let(:action) { action_name }
+
+          it "calls before_upsert_with_payload method" do
+            expect{ perform }.to change { actions_called[:before_hook_with_payload] }
+          end
+
           it "calls before_upsert method" do
             expect{ perform }.to change { actions_called[:before_hook] }
           end
@@ -225,7 +235,15 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
 
                 persist_to :foobar
                 before_upsert :before_hook, :before_hook2
+                before_upsert_with_payload :before_hook_with_payload, :before_hook_with_payload2
                 after_upsert :after_hook, :after_hook2
+
+                def before_hook_with_payload(entity, payload)
+                  self.actions_called[:before_hook_with_payload] = true
+                end
+                def before_hook_with_payload2(entity, payload)
+                  self.actions_called[:before_hook_with_payload2] = true
+                end
 
                 def before_hook(entity); self.actions_called[:before_hook] = true; end
                 def before_hook2(entity); self.actions_called[:before_hook2] = true; end
@@ -239,6 +257,8 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
                                .and change { actions_called[:before_hook2] }
                                .and change { actions_called[:after_hook] }
                                .and change { actions_called[:after_hook2] }
+                               .and change { actions_called[:before_hook_with_payload] }
+                               .and change { actions_called[:before_hook_with_payload2] }
             end
           end
         end

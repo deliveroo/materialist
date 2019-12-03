@@ -61,6 +61,7 @@ module Materialist
         def upsert_record
           model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
+            before_upsert_with_payload&.each { |m| instance.send(m, entity, resource) }
             entity.update_attributes!(attributes)
           end
         end
@@ -74,7 +75,6 @@ module Materialist
           return unless link = resource.dig(:_links, key)
           return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
-          # TODO: perhaps consider doing this asynchronously some how?
           materializer_class.perform(link[:href], :noop)
         end
 
@@ -84,6 +84,10 @@ module Materialist
 
         def before_upsert
           options[:before_upsert]
+        end
+
+        def before_upsert_with_payload
+          options[:before_upsert_with_payload]
         end
 
         def after_upsert
