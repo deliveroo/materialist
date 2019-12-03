@@ -31,7 +31,6 @@ module Materialist
           end
 
           materialize_links
-          materialize_link_arrays
         rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
           # when there is a race condition and uniqueness of :source_url
           # is enforced by database index, this error is raised
@@ -62,6 +61,12 @@ module Materialist
         def upsert_record
           model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
+            if before_upsert_with_links
+              before_upsert_with_links.each do |m|
+                instance.send(m, entity, resource)
+              end
+            end
+            #send_messages(before_upsert_with_links, entity, resource) unless before_upsert_with_links.nil?
             entity.update_attributes!(attributes)
           end
         end
@@ -71,17 +76,10 @@ module Materialist
             .each { |key, opts| materialize_link(key, opts) }
         end
 
-        def materialize_link_arrays
-          (options[:link_arrays_to_materialize] || [])
-            .each { |key, opts| materialize_link_array(key, opts) }
-        end
-
         def materialize_link_array(key, opts)
           return unless links = resource.dig(:_links, key)
           return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
-          # TODO: perhaps consider doing this asynchronously some how?
-          # TODO: maybe wrap in transaction so we don't end up with half the objects?
           links.each do |link|
             materializer_class.perform(link[:href], :noop)
           end
@@ -92,7 +90,9 @@ module Materialist
           return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
 
           # TODO: perhaps consider doing this asynchronously some how?
-          materializer_class.perform(link[:href], :noop)
+          link.each do |l|
+            materializer_class.perform(l[:href], :noop)
+          end
         end
 
         def mappings
@@ -101,6 +101,10 @@ module Materialist
 
         def before_upsert
           options[:before_upsert]
+        end
+
+        def before_upsert_with_links
+          options[:before_upsert_with_links]
         end
 
         def after_upsert

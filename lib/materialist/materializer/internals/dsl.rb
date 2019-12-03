@@ -2,9 +2,9 @@ module Materialist
   module Materializer
     module Internals
       module DSL
-        def materialize_link_array(key, topic: key)
-          __materialist_options[:link_arrays_to_materialize][key] = { topic: topic }
-        end
+        #def materialize_link_array(key, topic: key)
+          #__materialist_options[:links_to_materialize][key] = { topic: topic }
+        #end
 
         def materialize_link(key, topic: key)
           __materialist_options[:links_to_materialize][key] = { topic: topic }
@@ -45,6 +45,10 @@ module Materialist
         def source_key(key, &url_parser_block)
           __materialist_options[:source_key] = key
           __materialist_options[:url_parser] = url_parser_block
+        end
+
+        def before_upsert_with_links(*method_array)
+          __materialist_options[:before_upsert_with_links] = method_array
         end
 
         def before_upsert(*method_array)
