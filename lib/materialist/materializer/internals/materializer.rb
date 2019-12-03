@@ -31,6 +31,7 @@ module Materialist
           end
 
           materialize_links
+          materialize_link_arrays
         rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
           # when there is a race condition and uniqueness of :source_url
           # is enforced by database index, this error is raised
@@ -68,6 +69,22 @@ module Materialist
         def materialize_links
           (options[:links_to_materialize] || [])
             .each { |key, opts| materialize_link(key, opts) }
+        end
+
+        def materialize_link_arrays
+          (options[:link_arrays_to_materialize] || [])
+            .each { |key, opts| materialize_link_array(key, opts) }
+        end
+
+        def materialize_link_array(key, opts)
+          return unless links = resource.dig(:_links, key)
+          return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
+
+          # TODO: perhaps consider doing this asynchronously some how?
+          # TODO: maybe wrap in transaction so we don't end up with half the objects?
+          links.each do |link|
+            materializer_class.perform(link[:href], :noop)
+          end
         end
 
         def materialize_link(key, opts)

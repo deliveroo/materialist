@@ -2,6 +2,10 @@ module Materialist
   module Materializer
     module Internals
       module DSL
+        def materialize_link_array(key, topic: key)
+          __materialist_options[:link_arrays_to_materialize][key] = { topic: topic }
+        end
+
         def materialize_link(key, topic: key)
           __materialist_options[:links_to_materialize][key] = { topic: topic }
         end
