@@ -43,6 +43,15 @@ module Materialist
           __materialist_options[:url_parser] = url_parser_block
         end
 
+        # This method is meant to be used for cases when the application needs
+        # to have access to the `payload` that is returned on the HTTP call.
+        # Such an example would be if the application logic requires all
+        # relationships to be present before the `resource` is saved in the
+        # database. Introduced in https://github.com/deliveroo/materialist/pull/47
+        def before_upsert_with_payload(*method_array)
+          __materialist_options[:before_upsert_with_payload] = method_array
+        end
+
         def before_upsert(*method_array)
           __materialist_options[:before_upsert] = method_array
         end

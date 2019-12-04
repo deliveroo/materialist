@@ -91,7 +91,7 @@ Materialist.configure do |config|
 end
 ```
 
-- `topics` (only when using in `.subscribe`): A string array of topics to be used.  
+- `topics` (only when using in `.subscribe`): A string array of topics to be used.
 If not provided nothing would be materialized.
 - `sidekiq_options` (optional, default: `{ retry: 10 }`) -- See [Sidekiq docs](https://github.com/mperham/sidekiq/wiki/Advanced-Options#workers) for list of options
 - `api_client` (optional) -- You can pass your `Routemaster::APIClient` instance
@@ -240,6 +240,24 @@ class ZoneMaterializer
 
   def my_second_method(record)
   end
+end
+```
+
+#### `before_upsert_with_payload <method> (, <method>(, ...))`
+describes the name of the instance method(s) to be invoked before a record is
+materialized, with the record as it exists in the database, or nil if it has
+not been created yet. The function will get as a second argument the `payload`
+of the HTTP response, this can be used to add additional information/persist
+other objects.
+
+
+```ruby
+class ZoneMaterializer
+  include Materialist::Materializer
+
+  before_upsert_with_payload :my_method
+
+  def my_method(record, payload); end
 end
 ```
 
