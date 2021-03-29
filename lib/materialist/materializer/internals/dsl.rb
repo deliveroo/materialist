@@ -38,9 +38,9 @@ module Materialist
           __materialist_options[:sidekiq_options] = options
         end
 
-        def source_key(key, &url_parser_block)
+        def source_key(key, &source_key_parser)
           __materialist_options[:source_key] = key
-          __materialist_options[:url_parser] = url_parser_block
+          __materialist_options[:source_key_parser] = source_key_parser
         end
 
         # This method is meant to be used for cases when the application needs

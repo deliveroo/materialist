@@ -50,7 +50,7 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
     let(:defined_source_id) { 65 }
     let(:defined_source_url) { "https://service.dev/defined_sources/#{defined_source_id}" }
-    let(:defined_source_body) {{ name: 'ben' }}
+    let(:defined_source_body) {{ name: 'ben', id: defined_source_id }}
 
     def stub_resource(url, body)
       stub_request(:get, url).to_return(
@@ -380,62 +380,87 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
     end
 
     context "entity based on the source_key column" do
-      subject do
-        Class.new do
-          include Materialist::Materializer
+      shared_examples 'an upsert materialization event' do
+        context "when creating" do
+          let(:perform) { subject.perform(defined_source_url, action) }
 
-          persist_to :defined_source
-
-          source_key :source_id do |url|
-            url.split('/').last.to_i
+          it "creates based on source_key" do
+            expect{perform}.to change{DefinedSource.count}.by 1
           end
 
-          capture :name
+          it "sets the correct source key" do
+            perform
+            inserted = DefinedSource.find_by(source_id: defined_source_id)
+            expect(inserted.source_id).to eq defined_source_id
+            expect(inserted.name).to eq defined_source_body[:name]
+          end
+        end
+
+        context "when updating" do
+          let(:action) { :update }
+          let!(:record) { DefinedSource.create!(source_id: defined_source_id, name: 'mo') }
+          let(:perform) { subject.perform(defined_source_url, action) }
+
+          it "updates based on source_key" do
+            perform
+            expect(DefinedSource.count).to eq 1
+          end
+
+          it "updates the existing record" do
+            perform
+            inserted = DefinedSource.find_by(source_id: defined_source_id)
+            expect(inserted.source_id).to eq defined_source_id
+            expect(inserted.name).to eq defined_source_body[:name]
+          end
         end
       end
 
-      context "when creating" do
-        let(:perform) { subject.perform(defined_source_url, action) }
+      context 'with url source key parser' do
+        subject do
+          Class.new do
+            include Materialist::Materializer
 
-        it "creates based on source_key" do
-          expect{perform}.to change{DefinedSource.count}.by 1
+            persist_to :defined_source
+
+            source_key :source_id do |url|
+              url.split('/').last.to_i
+            end
+
+            capture :name
+          end
         end
 
-        it "sets the correct source key" do
-          perform
-          inserted = DefinedSource.find_by(source_id: defined_source_id)
-          expect(inserted.source_id).to eq defined_source_id
-          expect(inserted.name).to eq defined_source_body[:name]
+        context "when deleting" do
+          let(:action) { :delete }
+          let!(:record) { DefinedSource.create!(source_id: defined_source_id, name: 'mo') }
+          let(:perform) { subject.perform(defined_source_url, action) }
+
+          it "deletes based on source_key" do
+            perform
+            expect(DefinedSource.count).to eq 0
+          end
         end
+
+        it_behaves_like 'an upsert materialization event'
       end
 
-      context "when updating" do
-        let(:action) { :update }
-        let!(:record) { DefinedSource.create!(source_id: defined_source_id, name: 'mo') }
-        let(:perform) { subject.perform(defined_source_url, action) }
+      context 'with resource source key parser' do
+        subject do
+          Class.new do
+            include Materialist::Materializer
 
-        it "updates based on source_key" do
-          perform
-          expect(DefinedSource.count).to eq 1
+            persist_to :defined_source
+
+            source_key :source_id do |_, resource|
+              resource.dig(:id)
+            end
+
+            capture :name
+            capture :id
+          end
         end
 
-        it "updates the existing record" do
-          perform
-          inserted = DefinedSource.find_by(source_id: defined_source_id)
-          expect(inserted.source_id).to eq defined_source_id
-          expect(inserted.name).to eq defined_source_body[:name]
-        end
-      end
-
-      context "when deleting" do
-        let(:action) { :delete }
-        let!(:record) { DefinedSource.create!(source_id: defined_source_id, name: 'mo') }
-        let(:perform) { subject.perform(defined_source_url, action) }
-
-        it "deletes based on source_key" do
-          perform
-          expect(DefinedSource.count).to eq 0
-        end
+        it_behaves_like 'an upsert materialization event'
       end
     end
   end
