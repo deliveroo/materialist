@@ -444,15 +444,15 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
         it_behaves_like 'an upsert materialization event'
       end
 
-      context 'with attributes source key parser' do
+      context 'with resource source key parser' do
         subject do
           Class.new do
             include Materialist::Materializer
 
             persist_to :defined_source
 
-            source_key :source_id do |_, attr|
-              attr[:id].to_i
+            source_key :source_id do |_, resource|
+              resource.dig(:id)
             end
 
             capture :name
