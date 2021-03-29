@@ -50,7 +50,7 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
     let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
     let(:defined_source_id) { 65 }
     let(:defined_source_url) { "https://service.dev/defined_sources/#{defined_source_id}" }
-    let(:defined_source_body) {{ name: 'ben' }}
+    let(:defined_source_body) {{ id: 123, name: 'ben' }}
 
     def stub_resource(url, body)
       stub_request(:get, url).to_return(
@@ -435,6 +435,62 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
         it "deletes based on source_key" do
           perform
           expect(DefinedSource.count).to eq 0
+        end
+      end
+    end
+
+    context 'entity based on the source_key options column' do
+      subject do
+        Class.new do
+          include Materialist::Materializer
+
+          persist_to :defined_drn_source
+
+          drn_checker = ->(_) { true }
+
+          source_key :source_id, options: { drn_column: :source_drn_id, drn_checker: drn_checker } do |url|
+            url.split('/').last.to_s
+          end
+
+          capture :id, as: :source_id
+          capture :name
+        end
+      end
+
+      context "when creating" do
+        let(:perform) { subject.perform(defined_source_url, action) }
+
+        it "creates based on source_key" do
+          expect{perform}.to change{DefinedDrnSource.count}.by 1
+        end
+
+        it "sets the correct source key" do
+          perform
+          inserted = DefinedDrnSource.find_by(source_drn_id: defined_source_id)
+          expect(inserted.source_drn_id).to eq defined_source_id.to_s
+          expect(inserted.source_id).to eq defined_source_body[:id]
+          expect(inserted.name).to eq defined_source_body[:name]
+        end
+      end
+
+      context "when updating" do
+        let(:action) { :update }
+        let!(:record) do
+          DefinedDrnSource.create!(source_drn_id: defined_source_id.to_s, source_id: defined_source_id, name: 'mo')
+        end
+        let(:perform) { subject.perform(defined_source_url, action) }
+
+        it "updates based on source_key" do
+          perform
+          expect(DefinedDrnSource.count).to eq 1
+        end
+
+        it "updates the existing record" do
+          perform
+          inserted = DefinedDrnSource.find_by(source_drn_id: defined_source_id)
+          expect(inserted.source_drn_id).to eq defined_source_id.to_s
+          expect(inserted.source_id).to eq defined_source_body[:id]
+          expect(inserted.name).to eq defined_source_body[:name]
         end
       end
     end

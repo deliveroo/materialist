@@ -72,8 +72,8 @@ module Materialist
         end
 
         def materialize_link(key, opts)
-          return unless link = resource.dig(:_links, key)
-          return unless materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic))
+          return unless (link = resource.dig(:_links, key))
+          return unless (materializer_class = MaterializerFactory.class_from_topic(opts.fetch(:topic)))
 
           materializer_class.perform(link[:href], :noop)
         end
@@ -110,16 +110,36 @@ module Materialist
           options.fetch(:source_key, :source_url)
         end
 
+        def source_key_options
+          options.fetch(:source_key_options, {})
+        end
+
+        def drn_source_key
+          return @drn_source_key if defined?(@drn_source_key)
+          @drn_source_key ||= source_key_options[:drn_column]
+        end
+
+        def drn_checker
+          source_key_options[:drn_checker] || ->(_) { false }
+        end
+
         def url_parser
-          options[:url_parser] || ->url { url }
+          options[:url_parser] || ->(url) { url }
         end
 
         def source_lookup(url)
-          @_source_lookup ||= { source_key => url_parser.call(url) }
+          @_source_lookup ||= begin
+            id  = url_parser.call(url)
+            key = source_key
+            if drn_source_key && drn_checker.call(id)
+              key = drn_source_key
+            end
+            { key => id }
+          end
         end
 
         def attributes
-          mappings.map{ |m| m.map(resource) }.compact.reduce(&:merge) || {}
+          mappings.map { |m| m.map(resource) }.compact.reduce(&:merge) || {}
         end
 
         def resource

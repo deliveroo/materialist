@@ -38,8 +38,9 @@ module Materialist
           __materialist_options[:sidekiq_options] = options
         end
 
-        def source_key(key, &url_parser_block)
+        def source_key(key, options: {}, &url_parser_block)
           __materialist_options[:source_key] = key
+          __materialist_options[:source_key_options] = options
           __materialist_options[:url_parser] = url_parser_block
         end
 
@@ -66,6 +67,10 @@ module Materialist
 
         def before_destroy(*method_array)
           __materialist_options[:before_destroy] = method_array
+        end
+
+        def drn_checker(&drn_checker_block)
+          __materialist_options[:is_drn] = drn_checker_block
         end
       end
     end
