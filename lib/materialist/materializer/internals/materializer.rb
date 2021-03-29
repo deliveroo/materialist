@@ -59,7 +59,7 @@ module Materialist
         end
 
         def upsert_record
-          model_class.find_or_initialize_by(source_lookup(url)).tap do |entity|
+          model_class.find_or_initialize_by(source_lookup(url, attributes)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
             before_upsert_with_payload&.each { |m| instance.send(m, entity, resource) }
             entity.update_attributes!(attributes)
@@ -110,12 +110,12 @@ module Materialist
           options.fetch(:source_key, :source_url)
         end
 
-        def url_parser
-          options[:url_parser] || ->url { url }
+        def source_key_parser
+          options[:source_key_parser] || ->(url, data) { url }
         end
 
-        def source_lookup(url)
-          @_source_lookup ||= { source_key => url_parser.call(url) }
+        def source_lookup(url, attr=nil)
+          @_source_lookup ||= { source_key => source_key_parser.call(url, attr) }
         end
 
         def attributes
