@@ -155,7 +155,7 @@ class ZoneMaterializer
 
   persist_to :zone
 
-  source_key :source_id do |url|
+  source_key :source_id do |url, captured_attributes|
     /(\d+)\/?$/.match(url)[1]
   end
 
@@ -189,10 +189,10 @@ describes the name of the active record model to be used.
 If missing, materialist skips materialising the resource itself, but will continue
 with any other functionality -- such as `materialize_link`.
 
-#### `source_key <column> <url_parser_block> (default: url)`
+#### `source_key <column> <parser_block> (default: url, captured attributes[create, update action only])`
 describes the column used to persist the unique identifier parsed from the url_parser_block.
 By default the column used is `:source_url` and the original `url` is used as the identifier.
-Passing an optional block allows you to extract an identifier from the URL.
+Passing an optional block allows you to extract an identifier from the URL and captured attributes.
 
 #### `capture <key>, as: <column> (default: key)`
 describes mapping a resource key to a database column.
