@@ -1,6 +1,9 @@
 ## Next
 
 _list pending release notes here..._
+## 3.8.1
+
+- ActiveSupport >= 6
 
 ## 3.6.0
 
