@@ -17,7 +17,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = %w(lib)
 
   spec.add_runtime_dependency 'sidekiq', '>= 5.0'
-  spec.add_runtime_dependency 'activesupport', '< 6.0'
+  spec.add_runtime_dependency 'activesupport'
   spec.add_runtime_dependency 'routemaster-drain', '>= 3.0'
 
   spec.add_development_dependency 'activerecord'
