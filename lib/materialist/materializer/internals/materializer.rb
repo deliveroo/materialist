@@ -62,7 +62,7 @@ module Materialist
           model_class.find_or_initialize_by(source_lookup(url, resource)).tap do |entity|
             send_messages(before_upsert, entity) unless before_upsert.nil?
             before_upsert_with_payload&.each { |m| instance.send(m, entity, resource) }
-            entity.update_attributes!(attributes)
+            entity.update!(attributes)
           end
         end
 
