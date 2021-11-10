@@ -1,6 +1,10 @@
 ## Next
 
 _list pending release notes here..._
+## 3.8.2
+
+- Fix Rails 6 deprecation warning for `update_attributes!`
+
 ## 3.8.1
 
 - ActiveSupport >= 6
