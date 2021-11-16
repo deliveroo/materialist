@@ -1,5 +1,3 @@
-require 'routemaster/api_client'
-
 module Materialist
   class << self
     def configuration
@@ -21,9 +19,12 @@ module Materialist
     def initialize
       @topics = []
       @sidekiq_options = {}
-      @api_client = Routemaster::APIClient.new(response_class: ::Routemaster::Responses::HateoasResponse)
       @metrics_client = NullMetricsClient
       @notice_error = nil
+    end
+
+    def api_client
+      @api_client || (raise StandardError.new('missing HTTP client'))
     end
 
     class NullMetricsClient

@@ -1,5 +1,6 @@
 require 'spec_helper'
 require 'materialist/workers/event'
+require 'routemaster/api_client'
 
 RSpec.describe Materialist::Workers::Event do
   describe "#perform" do
@@ -10,7 +11,10 @@ RSpec.describe Materialist::Workers::Event do
 
     before do
       allow(FoobarMaterializer).to receive(:perform)
-      Materialist.configure { |c| c.metrics_client = metrics_client }
+      Materialist.configure do |c|
+        c.metrics_client = metrics_client
+        c.api_client = Routemaster::APIClient.new(response_class: ::Routemaster::Responses::HateoasResponse)
+      end
     end
 
     after { Object.send(:remove_const, :FoobarMaterializer) }
