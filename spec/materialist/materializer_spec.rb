@@ -63,6 +63,9 @@ RSpec.describe Materialist::Materializer::Internals::Materializer do
     let!(:source_stub) { stub_resource source_url, source_body }
 
     before do
+      Materialist.configure do |c|
+        c.api_client = Routemaster::APIClient.new(response_class: ::Routemaster::Responses::HateoasResponse)
+      end
       stub_resource country_url, country_body
       stub_resource city_url, city_body
       stub_resource defined_source_url, defined_source_body

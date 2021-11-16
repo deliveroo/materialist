@@ -29,6 +29,9 @@ RSpec.describe Materialist::MaterializedRecord do
   let(:source_url) { 'https://service.dev/foobars/1' }
   let(:source_body) {{ _links: { city: { href: city_url }}, name: 'jack', age: 30 }}
   before do
+    Materialist.configure do |c|
+      c.api_client = Routemaster::APIClient.new(response_class: ::Routemaster::Responses::HateoasResponse)
+    end
     stub_request(:get, source_url).to_return(
       status: 200,
       body: source_body.to_json,
